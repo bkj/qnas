@@ -10,7 +10,7 @@ from rq import Queue
 from redis import Redis
 from collections import deque
 
-from qnas_funcs import run_job
+from qnas_funcs import run_job, kill
 
 # --
 # Create queue
@@ -22,18 +22,16 @@ q.empty()
 # --
 # Enqueue jobs
 
-jobs = range(10)
+jobs = range(2)
 
 for job in jobs:
-    time.sleep(0.1)
+    time.sleep(0.01)
     print >> sys.stderr, 'enqueuing %s' % str(job)
     result = q.enqueue(run_job, job)
     results.append(result)
 
 # --
 # Wait for jobs to finish
-
-n_remaining = len(jobs)
 
 while True:
     if len(results) == 0:
@@ -44,9 +42,7 @@ while True:
     if r.is_finished:
         params, result = r.result
         print >> sys.stderr, 'done: %s' % str(params)
-        
-        n_remaining -= 1
-        print 'n_remaining=%d' % n_remaining
+        print 'n_remaining=%d' % len(results)
     elif r.is_failed:
         print >> sys.stderr, 'failed'
     else:
@@ -55,6 +51,9 @@ while True:
 # --
 # (Maybe) kill all the workers
 
+nworkers = 10
+for _ in range(nworkers):
+    _ = q.enqueue(kill)
 
 
 
