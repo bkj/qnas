@@ -13,14 +13,14 @@ ENV PATH="/root/.anaconda/bin:${PATH}"
 
 # Install packages
 RUN pip install tqdm keras
-# RUN conda install -y pytorch torchvision cuda80 -c soumith
-# RUN conda install -y tensorflow-gpu
-# RUN conda install -y -c conda-forge awscli
-# RUN apt install -y jq
+RUN conda install -y pytorch torchvision cuda80 -c soumith
+RUN conda install -y tensorflow-gpu
+RUN conda install -y -c conda-forge awscli
+RUN apt install -y jq
 
-# # Install qnas
-# ADD ./install-qnas.sh /root/install-qnas.sh
-# RUN chmod -x /root/install-qnas.sh
-# RUN sh /root/install-qnas.sh
+# Install qnas
+ADD ./install-qnas.sh /root/install-qnas.sh
+RUN chmod -x /root/install-qnas.sh
+RUN sh /root/install-qnas.sh
 
 CMD /bin/bash
