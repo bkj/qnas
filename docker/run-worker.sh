@@ -6,4 +6,5 @@
 
 cd /root/projects/qnas/docker/
 git pull
-rqworker --url $REDIS_URL--burst 2>&1 | tee -a log
+
+rqworker --url redis://:$QNAS_PASSWORD@$QNAS_HOST:$QNAS_PORT --burst 2>&1 | tee -a log

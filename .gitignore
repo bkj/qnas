@@ -1,7 +1,7 @@
 *npy
 data/*
 results/*
-docker/credentials.json
+docker/credentials.sh
 docker/results/*
 ec2/results/*
 *pyc
