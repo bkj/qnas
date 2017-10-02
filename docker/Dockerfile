@@ -26,8 +26,9 @@ RUN pip install git+git://github.com/pytorch/vision
 RUN apt install -y redis-server
 RUN pip install redis rq
 
-# Install qnas
-RUN echo "checkpoint 15"
-ADD ./install-qnas.sh /root/install-qnas.sh
-RUN chmod -x /root/install-qnas.sh
-RUN sh /root/install-qnas.sh
+# Download qnas + datasets
+RUN mkdir -p /root/projects/
+WORKDIR /root/projects
+RUN git clone https://github.com/bkj/qnas
+WORKDIR /root/projects/qnas/
+RUN ./utils/download.sh
