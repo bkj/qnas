@@ -27,7 +27,7 @@ RUN apt install -y redis-server
 RUN pip install redis rq
 
 # Install qnas
-RUN echo "checkpoint 12"
+RUN echo "checkpoint 13"
 ADD ./install-qnas.sh /root/install-qnas.sh
 RUN chmod -x /root/install-qnas.sh
 RUN sh /root/install-qnas.sh
