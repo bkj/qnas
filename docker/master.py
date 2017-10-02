@@ -6,11 +6,12 @@
 
 import sys
 import time
+from tqdm import tqdm
 from rq import Queue
 from redis import Redis
 from collections import deque
 
-from qnas_funcs import *
+from worker import *
 
 # --
 # Params 
@@ -24,8 +25,6 @@ def parse_args():
 
 # --
 # Helpers
-
-
 
 def run(results, callback=None):
     while True:
@@ -57,19 +56,18 @@ def callback(config, result):
 
 if __name__ == "__main__":
     
+    args = parse_args()
+    
     results = deque()
     q = Queue(connection=Redis())
     q.empty() # Clear queue -- could be dangerous
     
     config = {"op_keys":["double_bnconv_3","identity","add"],"red_op_keys":["conv_1","double_bnconv_3","add"],"model_name":"test"}
     
-    for _ in range(2):
+    n_jobs = 2
+    for _ in tqdm(range(n_jobs)):
         time.sleep(0.01)
-        print >> sys.stderr, 'enqueuing %s' % str(job)
-        results.append(q.enqueue(run_job, config, epochs=1, ttl=ttl, result_ttl=result_ttl))
-    
-    # Enqeue jobs
-    results = initialize()
+        results.append(q.enqueue(run_job, config, epochs=1, ttl=args.ttl, result_ttl=args.result_ttl))
     
     # Run jobs, executing callback at each one
     run(results, callback)
