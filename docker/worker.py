@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-    qnas_funcs.py
+    worker.py
 """
 
 from __future__ import division
@@ -216,7 +216,8 @@ class GridPointWorker(object):
         return self.hist
     
     def save(self):
-        torch.save(net.state_dict(), self.config['model_path'])
+        model_path = '%s-%s' % (self.config['model_name'], datetime.now().strftime('%Y%m%dT%H%M%S'))
+        torch.save(self.net.state_dict(), model_path)
 
 
 def run_job(config, **kwargs):
