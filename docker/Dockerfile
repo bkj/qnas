@@ -18,9 +18,11 @@ RUN conda install -y tensorflow-gpu
 RUN conda install -y -c conda-forge awscli
 RUN apt install -y jq
 
+# BUG: !! Install most recent version of torchvision
+RUN conda uninstall torchvision
+RUN pip install git+git://github.com/pytorch/vision
+
 # Install qnas
 ADD ./install-qnas.sh /root/install-qnas.sh
 RUN chmod -x /root/install-qnas.sh
 RUN sh /root/install-qnas.sh
-
-CMD /bin/bash
