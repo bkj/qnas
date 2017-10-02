@@ -11,4 +11,5 @@ from datetime import datetime
 
 def run_job(x):
     time.sleep(2)
-    return x, x ** 2
+    return x, x['a'] ** 2
+
