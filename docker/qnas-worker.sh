@@ -4,5 +4,5 @@
 #
 # Start worker
 
-echo $REDIS_URL
-rqworker --url redis://10.105.0.3 2>&1 | tee -a log
+cd /root/projects/qnas/docker/
+rqworker --url $REDIS_URL 2>&1 | tee -a log
