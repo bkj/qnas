@@ -13,8 +13,6 @@ from collections import deque
 
 from worker import *
 
-# --
-# Params 
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -23,31 +21,12 @@ def parse_args():
     parser.add_argument('--ttl', type=int, default=60 * 60 * 2) # 2 hours
     return parser.parse_args()
 
-# --
-# Helpers
 
-def run(results, callback=None):
-    while True:
-        if len(results) == 0:
-            break
-        
-        r = results.popleft()
-        
-        if r.is_finished:
-            params, result = r.result
-            
-            if callback is not None:
-                callback(params, result)
-                
-        elif r.is_failed:
-            print >> sys.stderr, 'failed'
-        
-        else:
-            results.append(r)
-
-
-def callback(config, result):
-    result_path = os.path.join('results', run, config['model_name'])
+def callback(config, result, args):
+    """ action to take when results are returned """
+    print >> sys.stderr, 'job finished: %s' % json.dumps(config)
+    
+    result_path = os.path.join('results', args.run, config['model_name'])
     if not os.path.exists(os.path.dirname(result_path)):
         os.makedirs(os.path.dirname(result_path))
     
@@ -64,10 +43,28 @@ if __name__ == "__main__":
     
     config = {"op_keys":["double_bnconv_3","identity","add"],"red_op_keys":["conv_1","double_bnconv_3","add"],"model_name":"test"}
     
+    # Make sure model names are unique
+    
     n_jobs = 2
     for _ in tqdm(range(n_jobs)):
         time.sleep(0.01)
         results.append(q.enqueue(run_job, config, epochs=1, ttl=args.ttl, result_ttl=args.result_ttl))
     
     # Run jobs, executing callback at each one
-    run(results, callback)
+    while True:
+        if len(results) == 0:
+            break
+        
+        r = results.popleft()
+        
+        if r.is_finished:
+            params, result = r.result
+            
+            if callback is not None:
+                callback(params, result, args)
+                
+        elif r.is_failed:
+            print >> sys.stderr, 'failed'
+        
+        else:
+            results.append(r)

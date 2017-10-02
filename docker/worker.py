@@ -216,8 +216,7 @@ class GridPointWorker(object):
         return self.hist
     
     def save(self):
-        model_path = '%s-%s' % (self.config['model_name'], datetime.now().strftime('%Y%m%dT%H%M%S'))
-        torch.save(self.net.state_dict(), model_path)
+        torch.save(self.net.state_dict(), self.config['model_name'])
 
 
 def run_job(config, **kwargs):
