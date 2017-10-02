@@ -1,5 +1,6 @@
 *npy
 data/*
 results/*
+docker/results/*
 ec2/results/*
 *pyc

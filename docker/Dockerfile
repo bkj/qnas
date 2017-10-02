@@ -32,5 +32,3 @@ WORKDIR /root/projects
 RUN git clone https://github.com/bkj/qnas
 WORKDIR /root/projects/qnas/
 RUN ./utils/download.sh
-
-RUN git pull
