@@ -32,3 +32,8 @@ WORKDIR /root/projects
 RUN git clone https://github.com/bkj/qnas
 WORKDIR /root/projects/qnas/
 RUN ./utils/download.sh
+
+# Make sure have most recent version
+RUN echo "checkpoint ... 1"
+WORKDIR /root/projects/qnas/
+RUN git pull
