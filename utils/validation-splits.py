@@ -15,9 +15,13 @@ from sklearn.model_selection import train_test_split
 train_size = 0.9
 random_state = 123
 
-names = ['MNIST', 'fashionMNIST', 'STL10', 'CIFAR10', 'CIFAR100', 'SVHN']
+all_names = ['MNIST', 'fashionMNIST', 'STL10', 'CIFAR10', 'CIFAR100', 'SVHN']
 
-for name in names:
+for name in glob('./data/*'):
+    name = os.path.basename(name)
+    if name not in all_names:
+        continue
+    
     root = os.path.abspath(os.path.join('data', 'manual', name))
     print >> sys.stderr, 'validation-splits.py: %s' % root
     
@@ -40,7 +44,7 @@ for name in names:
         for d in split.dest.apply(os.path.dirname).unique():
             if not os.path.exists(d):
                 os.makedirs(d)
-                
+        
         _ = split[['src', 'dest']].apply(lambda x: os.symlink(x['src'], x['dest']), 1)
 
 
