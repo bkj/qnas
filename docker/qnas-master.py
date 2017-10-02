@@ -10,7 +10,7 @@ from rq import Queue
 from redis import Redis
 from collections import deque
 
-from qnas_funcs import run_job, kill
+from qnas_funcs import *
 
 # --
 # Create queue
