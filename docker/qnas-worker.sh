@@ -5,4 +5,4 @@
 # Start worker
 
 echo $REDIS_URL
-rqworker --url "$REDIS_URL" 2>&1 | tee -a log
+rqworker --url 10.105.0.3 2>&1 | tee -a log
