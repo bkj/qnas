@@ -17,6 +17,7 @@ from worker import *
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--run', type=str, default='qnas-0')
+    parser.add_argument('--credentials', type=str, default='./credentials.json')
     parser.add_argument('--result-ttl', type=int, default=60 * 60 * 2) # 2 hours
     parser.add_argument('--ttl', type=int, default=60 * 60 * 2) # 2 hours
     return parser.parse_args()
@@ -38,7 +39,7 @@ if __name__ == "__main__":
     args = parse_args()
     
     results = deque()
-    q = Queue(connection=Redis())
+    q = Queue(connection=Redis(**json.load(open(args.credentials))))
     q.empty() # Clear queue -- could be dangerous
     
     config = {"op_keys":["double_bnconv_3","identity","add"],"red_op_keys":["conv_1","double_bnconv_3","add"],"model_name":"test"}
