@@ -12,6 +12,9 @@ from collections import deque
 
 from qnas_funcs import *
 
+# --
+# Params 
+
 result_ttl = 60 * 60 * 2 # 2 hours
 ttl = 60 * 60 * 2 # 2 hours
 
@@ -23,20 +26,19 @@ q = Queue(connection=Redis())
 q.empty()
 
 # --
-# Enqueue jobs
+# Helpers
 
 def initialize():
     jobs = range(2)
     
+    config = {"op_keys":["double_bnconv_3","identity","add"],"red_op_keys":["conv_1","double_bnconv_3","add"],"model_name":"test"}
+    
     for job in jobs:
         time.sleep(0.01)
         print >> sys.stderr, 'enqueuing %s' % str(job)
-        results.append(q.enqueue(run_job, {'a' : job}, ttl=ttl, result_ttl=result_ttl))
+        results.append(q.enqueue(run_job, config, epochs=1, ttl=ttl, result_ttl=result_ttl))
     
     return results
-
-# --
-# Wait for jobs to finish
 
 def run(results, callback=None):
     while True:
@@ -64,5 +66,8 @@ def callback(params, result):
 
 
 if __name__ == "__main__":
+    # Enqeue jobs
     results = initialize()
+    
+    # Run jobs, executing callback at each one
     run(results, callback)
