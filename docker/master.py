@@ -25,15 +25,18 @@ def parse_args():
     return parser.parse_args()
 
 
-def callback(config, result, args):
+def callback(config, result, args, failed=False):
     """ action to take when results are returned """
-    print >> sys.stderr, 'job finished: %s' % json.dumps(config)
-    
-    result_path = os.path.join('results', args.run, config['model_name'])
-    if not os.path.exists(os.path.dirname(result_path)):
-        os.makedirs(os.path.dirname(result_path))
-    
-    open(result_path, 'w').write('\n'.join(map(json.dumps, result)))
+    if not failed:
+        print >> sys.stderr, 'job finished: %s' % json.dumps(config)
+        
+        result_path = os.path.join('results', args.run, config['model_name'])
+        if not os.path.exists(os.path.dirname(result_path)):
+            os.makedirs(os.path.dirname(result_path))
+        
+        open(result_path, 'w').write('\n'.join(map(json.dumps, result)))
+    else:
+        print >> sys.stderr, 'job failed: %s' % json.dumps(config)
 
 
 if __name__ == "__main__":
@@ -66,13 +69,8 @@ if __name__ == "__main__":
         r = results.popleft()
         
         if r.is_finished:
-            params, result = r.result
-            
-            if callback is not None:
-                callback(params, result, args)
-                
+            callback(params, result, args, failed=False)
         elif r.is_failed:
-            print >> sys.stderr, 'failed'
-        
+            callback(params, result, args, failed=True)
         else:
             results.append(r)
