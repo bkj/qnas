@@ -314,4 +314,4 @@ for epoch in range(epochs):
 
 # powersign -> 0.6428 @ 5epoch
 # sgd       -> 0.6044 @ 5epoch
-# addsign   -> 0.6508
+# addsign   -> 0.6508 @ 5epoch
