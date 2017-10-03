@@ -3,7 +3,7 @@
 """
     deploy-ec2.py
     
-    Deploy a bunch of Docker images on EC2
+    Deploy a bunch of Docker workers on EC2
 """
 
 import sys
@@ -20,6 +20,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--n-workers', type=int, required=True)
     parser.add_argument('--image-id', type=str, required=True)
+    parser.add_argument('--gpu', action="store_true")
     return parser.parse_args()
 
 # --
