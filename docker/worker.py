@@ -283,6 +283,7 @@ def run_job(config, **kwargs):
 
 
 def run_dummy(config, **kwargs):
+    time.sleep(3)
     return config, {"dummy" : True}
 
 

@@ -4,41 +4,59 @@
     deploy-ec2.py
     
     Deploy a bunch of Docker workers on EC2
+    
+    !! May want to run multiple workers on each machine
 """
 
+import os
 import sys
-import uuid
-import json
 import boto3
 import base64
 import argparse
-import numpy as np
-from uuid import uuid4
-from datetime import datetime
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--n-workers', type=int, required=True)
-    parser.add_argument('--image-id', type=str, required=True)
+    parser.add_argument('--instance-count', type=int, default=1)
+    parser.add_argument('--image-id', type=str, default='ami-f9ba4083')
+    parser.add_argument('--instance-type', type=str, default='m3.large')
     parser.add_argument('--gpu', action="store_true")
-    return parser.parse_args()
+    parser.add_argument('--njobs', type=int, default=1)
+    
+    args = parser.parse_args()
+    
+    if args.instance_type == 'm3.large':
+        args.spot_price = 0.03
+    elif args.instance_type == 'p2.xlarge':
+        args.spot_price = 0.25
+    else:
+        raise Exception("!! don't know a good price for instance_type=%s" % args.instance_type)
+    
+    return args
 
 # --
 # Helpers
 
-def make_cpu_cmd(credentials):
+def make_cpu_cmd(credentials, njobs=1):
     cmd = b"""#!/bin/bash
 
-sudo docker run -d \
-    -e QNAS_HOST=%s \
-    -e QNAS_PORT=%s \
-    -e QNAS_PASSWORD=%s \
-    qnas /root/projects/qnas/docker/run-worker.sh
+for i in $(seq %d); do
+    sudo docker run -d \
+        -e QNAS_HOST=%s \
+        -e QNAS_PORT=%s \
+        -e QNAS_PASSWORD=%s \
+        qnas /root/projects/qnas/docker/run-worker.sh
+done
 
-echo "terminating..."
-sudo halt
+while true; do
+    if [ $(sudo docker ps | wc -l) -eq 1 ]; then
+        echo "no docker containers -- halting!"
+        sudo halt
+    fi
+    sleep 5
+done
 
     """ % (
+        njobs,
         credentials['QNAS_HOST'],
         credentials['QNAS_PORT'],
         credentials['QNAS_PASSWORD']
@@ -47,22 +65,30 @@ sudo halt
     return cmd, base64.b64encode(cmd)
 
 
-def make_gpu_cmd(credentials):
+def make_gpu_cmd(credentials, njobs=1):
     cmd = b"""#!/bin/bash
 
 sudo nvidia-smi -pm ENABLED -i 0
 sudo nvidia-smi -ac 2505,875 -i 0
 
-sudo nvidia-docker run -d \
-    -e QNAS_HOST=%s \
-    -e QNAS_PORT=%s \
-    -e QNAS_PASSWORD=%s \
-    qnas /root/projects/qnas/docker/run-worker.sh
+for i in $(seq %d); do
+    sudo nvidia-docker run -d \
+        -e QNAS_HOST=%s \
+        -e QNAS_PORT=%s \
+        -e QNAS_PASSWORD=%s \
+        qnas /root/projects/qnas/docker/run-worker.sh
+done
 
-echo "terminating..."
-sudo halt
+while true; do
+    if [ $(sudo docker ps | wc -l) -eq 1 ]; then
+        echo "no docker containers -- halting!"
+        sudo halt
+    fi
+    sleep 5
+done
 
     """ % (
+        njobs,
         credentials['QNAS_HOST'],
         credentials['QNAS_PORT'],
         credentials['QNAS_PASSWORD']
@@ -71,17 +97,17 @@ sudo halt
     return cmd, base64.b64encode(cmd)
 
 
-def launch_spot(client, cmd_b64, image_id, spot_price=0.25):
+def launch_spot(client, cmd_b64, instance_count, image_id, instance_type, spot_price):
     return client.request_spot_instances(
         DryRun=False,
         SpotPrice=str(spot_price),
-        InstanceCount=1,
+        InstanceCount=instance_count,
         Type='one-time',
         LaunchSpecification={
             'ImageId'        : image_id, # qnas-docker-v0
             'KeyName'        : 'rzj',
             'SecurityGroups' : ['ssh'],
-            'InstanceType'   : 'p2.xlarge',
+            'InstanceType'   : instance_type,
             'Placement' : {
                 'AvailabilityZone': 'us-east-1c', # cheapest when I looked
             },
@@ -95,20 +121,28 @@ def launch_spot(client, cmd_b64, image_id, spot_price=0.25):
 
 if __name__ == "__main__":
     args = parse_args()
+    
     client = boto3.client('ec2')
     
-    credentials = {
-        'QNAS_HOST' : os.environ['QNAS_HOST'],
-        'QNAS_PORT' : os.environ['QNAS_PORT'],
-        'QNAS_PASSWORD' : os.environ['QNAS_PASSWORD'],
-    }
+    try:
+        credentials = {
+            'QNAS_HOST'     : os.environ['QNAS_HOST'],
+            'QNAS_PORT'     : os.environ['QNAS_PORT'],
+            'QNAS_PASSWORD' : os.environ['QNAS_PASSWORD'],
+        }
+    except:
+        raise Exception("couldn't get credentials -- try `source ../credentials.sh`")
     
-    if args.gpu:
-        cmd_clear, cmd_b64 = make_gpu_cmd(credentials)
-    else:
-        cmd_clear, cmd_b64 = make_cpu_cmd(credentials)
+    make_cmd = make_gpu_cmd if args.gpu else make_cpu_cmd
+    cmd_clear, cmd_b64 = make_cmd(credentials, args.njobs)
+    print cmd_clear
     
-    print >> sys.stderr, cmd_clear
-    for _ in range(args.n_workers):
-        print launch_spot(client, cmd_b64, image_id=args.image_id)
+    print launch_spot(
+        client,
+        cmd_b64,
+        args.instance_count,
+        args.image_id,
+        args.instance_type,
+        args.spot_price
+    )
 

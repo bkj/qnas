@@ -4,6 +4,7 @@
     master.py
 """
 
+import os
 import sys
 import time
 from rq import Queue
@@ -20,6 +21,8 @@ def parse_args():
     parser.add_argument('--redis-password', type=str)
     parser.add_argument('--redis-host', type=str)
     parser.add_argument('--redis-port', type=int)
+    
+    parser.add_argument('--empty', action='store_true')
     
     parser.add_argument('--result-ttl', type=int, default=60 * 60 * 6) # 6 hours
     parser.add_argument('--ttl', type=int, default=60 * 60 * 6) # 6 hours
@@ -95,7 +98,11 @@ if __name__ == "__main__":
     args = parse_args()
     controller = SimpleController(args)
     
-    n_jobs = 48
+    if args.empty:
+        _ = controller.q.empty()
+        os._exit(0)
+    
+    n_jobs = 100
     for i in tqdm(range(n_jobs)):
         controller.enqueue(run_dummy, {
             "config" : {"model_name" : "test-%d" % i},
