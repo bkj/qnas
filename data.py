@@ -104,7 +104,7 @@ def CIFAR(name='CIFAR10', root='./data/'):
         datasets.ImageFolder(root=os.path.join(root, 'manual/%s/tv_train' % name), transform=transform_train), 
         batch_size=128, 
         shuffle=True, 
-        num_workers=8,
+        num_workers=2,
         # pin_memory=True
     )
     
@@ -112,7 +112,7 @@ def CIFAR(name='CIFAR10', root='./data/'):
         datasets.ImageFolder(root=os.path.join(root, 'manual/%s/tv_val' % name), transform=transform_test), 
         batch_size=256, 
         shuffle=False, 
-        num_workers=8,
+        num_workers=2,
         # pin_memory=True,
     )
     
@@ -120,7 +120,7 @@ def CIFAR(name='CIFAR10', root='./data/'):
         datasets.ImageFolder(root=os.path.join(root, 'manual/%s/test' % name), transform=transform_test), 
         batch_size=256, 
         shuffle=False, 
-        num_workers=8,
+        num_workers=2,
         # pin_memory=True,
     )
     
