@@ -33,72 +33,22 @@ import torchvision
 import torchvision.transforms as transforms
 
 sys.path.append('..')
-from nas import RNet
-from data import DataLoader
 from lr import LRSchedule
+from data import DataLoader
+from nets.rnet import RNet
+from nets.mnist_net import MNISTNet
 
 # --
 # Network constructor helpers
 
-class MNISTNet(nn.Module):
-    def __init__(self, input_shape=(28, 28)):
-        super(MNISTNet, self).__init__()
-        
-        self.conv = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=3),
-            nn.ReLU(),
-            nn.Conv2d(32, 64, kernel_size=3),
-            nn.ReLU(),
-            nn.MaxPool2d(2),
-            # nn.Dropout2d(p=0.25),
-        )
-        
-        # Fully connected layers
-        tmp = Variable(torch.zeros((1, 1, input_shape[0], input_shape[1])))
-        self.fc1_size = np.prod(self.conv(tmp).size()[1:])
-        
-        self.fc1 = nn.Linear(self.fc1_size, 128)
-        self.fc2 = nn.Linear(128, 10)
-    
-    def forward(self, x):
-        x = self.conv(x)
-        x = x.view(-1, self.fc1_size)
-        x = F.relu(self.fc1(x))
-        x = F.dropout(x, training=self.training)
-        x = self.fc2(x)
-        return x
-    
-    def train_step(self, data, targets, optimizer):
-        optimizer.zero_grad()
-        outputs = self(data)
-        loss = F.cross_entropy(outputs, targets)
-        loss.backward()
-        optimizer.step()
-        return outputs, loss.data[0]
-
-
 class NetConstructors(object):
     @staticmethod
-    def rnet(config, num_classes, cuda=True):
-        net = RNet(
-            config['op_keys'],
-            config['red_op_keys'],
-            num_classes=num_classes,
-        )
-        
-        if cuda:
-            net = net.cuda()
-        
-        return net
+    def rnet(config, num_classes):
+        return RNet(config['op_keys'], config['red_op_keys'], num_classes=num_classes)
     
     @staticmethod
-    def mnist_net(config, num_classes, cuda=True):
-        net = MNISTNet()
-        
-        if cuda:
-            net = net.cuda()
-        
-        return net
+    def mnist_net(config, num_classes):
+        return MNISTNet()
 
 # --
 # Training helpers
@@ -106,10 +56,12 @@ class NetConstructors(object):
 class GridPointWorker(object):
     
     def __init__(self, config, net_class='rnet', dataset='CIFAR10', epochs=20, 
-        lr_schedule='linear', lr_init=0.1, lr_fail_factor=0.5, max_failures=3, cuda=True):
+        lr_schedule='linear', lr_init=0.1, lr_fail_factor=0.5, max_failures=3, 
+        cuda=True, dataset_num_workers=2):
     
         self.config = config
         self.config['vars'] = {
+            "net_class"      : net_class,
             "dataset"        : dataset,
             "epochs"         : epochs,
             "lr_schedule"    : lr_schedule,
@@ -118,28 +70,38 @@ class GridPointWorker(object):
             "max_failures"   : max_failures,
         }
         
+        self.net_class      = net_class
         self.dataset        = dataset
-        self.epoch          = 0
         self.epochs         = epochs
         self.lr_schedule    = lr_schedule
         self.lr_init        = lr_init
-        self.fail_counter   = 0
         self.lr_fail_factor = lr_fail_factor
         self.max_failures   = max_failures
+        self.cuda           = cuda
         
+        self.fail_counter = 0
         self.hist = []
+    
+    def _reset_network(self):
+        # Reset epoch count
+        self.epoch = 0
         
         # Set dataset
-        self.ds = getattr(DataLoader(root='../data/', pin_memory=cuda, num_workers=2), dataset)()
+        self.ds = getattr(DataLoader(root='../data/', pin_memory=self.cuda, 
+            num_workers=dataset_num_workers), self.dataset)()
         
-        # Define network
-        self.net = getattr(NetConstructors, net_class)(config, self.ds['num_classes'], cuda=cuda)
+        # Network
+        self.net = getattr(NetConstructors, self.net_class)(self.config, self.ds['num_classes'])
+        if self.cuda:
+            self.net = self.net.cuda()
         
-        # Set LR scheduler
-        self.lr_scheduler = functools.partial(getattr(LRSchedule, lr_schedule), lr_init=lr_init, epochs=epochs)
+        # LR scheduler
+        self.lr_scheduler = functools.partial(getattr(LRSchedule, self.lr_schedule), 
+            lr_init=self.lr_init, epochs=self.epochs)
         
-        # Set optimizer
-        self.opt = optim.SGD(self.net.parameters(), lr=self.lr_scheduler(float(self.epoch)), momentum=0.9, weight_decay=5e-4)
+        # Optimizer
+        self.opt = optim.SGD(self.net.parameters(), lr=self.lr_scheduler(float(self.epoch)), 
+            momentum=0.9, weight_decay=5e-4)
     
     @staticmethod
     def _train_epoch(net, loader, opt, epoch, lr_scheduler, n_train_batches):
@@ -207,7 +169,7 @@ class GridPointWorker(object):
     def run(self):
         while self.epoch < self.epochs:
             
-            # Train
+            # Train for an epoch
             train_acc, train_loss, train_history = GridPointWorker._train_epoch(
                 net=self.net,
                 loader=self.ds['train_loader'],
@@ -218,36 +180,22 @@ class GridPointWorker(object):
             )
             
             # Sometimes the models don't converge...
-            # This is just a heuristic, may not lead to the fairest comparisons
             if np.isnan(train_loss):
                 self.fail_counter += 1
                 if self.fail_counter <= self.max_failures:
                     print >> sys.stderr, 'grid-point.py: train_loss is NaN -- reducing LR and restarting'
-                    
-                    # Reset epoch count
-                    self.epoch = 0
-                    
-                    # Reduce initial learning rate
                     self.lr_init *= self.lr_fail_factor
-                    
-                    # Set LR scheduler
-                    self.lr_scheduler = functools.partial(getattr(LRSchedule, self.lr_schedule), lr_init=self.lr_init, epochs=self.epochs)
-                    
-                    # (Re)define network
-                    self.net = getattr(NetConstructors, net_class)(config, self.ds['num_classes'], cuda=cuda)
-                    
-                    # (Re)define optimizer
-                    self.opt = optim.SGD(self.net.parameters(), lr=self.lr_scheduler(float(self.epoch)), momentum=0.9, weight_decay=5e-4)
+                    self._reset_network()
                     continue
                 else:
                     print >> sys.stderr, 'grid-point.py: train_loss is NaN -- too many failures -- exiting'
                     os._exit(0)
             
-            # Eval
+            # Eval on val + test datasets
             val_acc, val_loss = GridPointWorker._eval(self.net, self.epoch, self.ds['val_loader'], mode='val')
             test_acc, test_loss = GridPointWorker._eval(self.net, self.epoch, self.ds['test_loader'], mode='test')
             
-            # Log
+            # Log performance
             self.hist.append({
                 'epoch'              : self.epoch, 
                 'lr'                 : self.lr_scheduler(self.epoch + 1),
