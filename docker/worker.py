@@ -129,7 +129,7 @@ class GridPointWorker(object):
         self.hist = []
         
         # Set dataset
-        self.ds = getattr(DataLoader(root='../data/'), dataset)()
+        self.ds = getattr(DataLoader(root='../data/', pin_memory=cuda, num_workers=2), dataset)()
         
         # Define network
         self.net = getattr(NetConstructors, net_class)(config, self.ds['num_classes'], cuda=cuda)

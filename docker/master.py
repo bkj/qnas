@@ -65,7 +65,7 @@ if __name__ == "__main__":
         
         r = q.enqueue(
             run_job,
-            config=config, net_class='mnist_net', dataset='MNIST', cuda=True, epochs=1,
+            config=config, net_class='mnist_net', dataset='MNIST', cuda=False, epochs=1,
             ttl=args.ttl, result_ttl=args.result_ttl, timeout=args.timeout,
         )
         results.append(r)
