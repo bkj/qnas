@@ -30,18 +30,15 @@ def parse_args():
     return parser.parse_args()
 
 
-def callback(config, result, args, failed=False):
+def callback(config, result, args):
     """ action to take when results are returned """
-    if not failed:
-        print >> sys.stderr, 'job finished: %s' % json.dumps(config)
-        
-        result_path = os.path.join('results', args.run, config['model_name'])
-        if not os.path.exists(os.path.dirname(result_path)):
-            os.makedirs(os.path.dirname(result_path))
-        
-        open(result_path, 'w').write('\n'.join(map(json.dumps, result)))
-    else:
-        print >> sys.stderr, 'job failed: %s' % json.dumps(config)
+    print >> sys.stderr, 'job finished: %s' % json.dumps(config)
+    
+    result_path = os.path.join('results', args.run, config['model_name'])
+    if not os.path.exists(os.path.dirname(result_path)):
+        os.makedirs(os.path.dirname(result_path))
+    
+    open(result_path, 'w').write('\n'.join(map(json.dumps, result)))
 
 
 if __name__ == "__main__":
@@ -59,15 +56,16 @@ if __name__ == "__main__":
     for _ in tqdm(range(n_jobs)):
         time.sleep(0.01)
         
-        config = {
-            "op_keys":["double_bnconv_3","identity","add"],
-            "red_op_keys":["conv_1","double_bnconv_3","add"],
-            "model_name":"test",
-        }
+        # config = {
+        #     "op_keys":["double_bnconv_3","identity","add"],
+        #     "red_op_keys":["conv_1","double_bnconv_3","add"],
+        #     "model_name":"test",
+        # }
+        config = {"model_name" : "test"}
         
         r = q.enqueue(
             run_job,
-            config=config, net_class='rnet', cuda=False, epochs=1,
+            config=config, net_class='mnist_net', dataset='MNIST', cuda=True, epochs=1,
             ttl=args.ttl, result_ttl=args.result_ttl, timeout=args.timeout,
         )
         results.append(r)
@@ -81,9 +79,8 @@ if __name__ == "__main__":
         
         if r.is_finished:
             config, result = r.result
-            callback(config, result, args, failed=False)
+            callback(config, result, args)
         elif r.is_failed:
-            config, result = r.result
-            callback(config, result, args, failed=True)
+            print >> sys.stderr, 'failed!'
         else:
             results.append(r)

@@ -32,13 +32,50 @@ import torchvision.transforms as transforms
 
 sys.path.append('..')
 from nas import RNet
-from data import *
+from data import DataLoader
 from lr import LRSchedule
 
 cudnn.benchmark = True
 
 # --
 # Network constructor helpers
+
+class MNISTNet(nn.Module):
+    def __init__(self, input_shape=(28, 28)):
+        super(MNISTNet, self).__init__()
+        
+        self.conv = nn.Sequential(
+            nn.Conv2d(1, 32, kernel_size=3),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=3),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            # nn.Dropout2d(p=0.25),
+        )
+        
+        # Fully connected layers
+        tmp = Variable(torch.zeros((1, 1, input_shape[0], input_shape[1])))
+        self.fc1_size = np.prod(self.conv(tmp).size()[1:])
+        
+        self.fc1 = nn.Linear(self.fc1_size, 128)
+        self.fc2 = nn.Linear(128, 10)
+    
+    def forward(self, x):
+        x = self.conv(x)
+        x = x.view(-1, self.fc1_size)
+        x = F.relu(self.fc1(x))
+        x = F.dropout(x, training=self.training)
+        x = self.fc2(x)
+        return x
+    
+    def train_step(self, data, targets, optimizer):
+        optimizer.zero_grad()
+        outputs = self(data)
+        loss = F.cross_entropy(outputs, targets)
+        loss.backward()
+        optimizer.step()
+        return outputs, loss.data[0]
+
 
 class NetClasses(object):
     @staticmethod
@@ -55,6 +92,12 @@ class NetClasses(object):
         return net
     
     @staticmethod
+    def mnist_net(config, num_classes, cuda=True):
+        net = MNISTNet()
+        if cuda:
+            net = net.cuda()
+        
+        return net
 
 # --
 # Training helpers
@@ -86,12 +129,7 @@ class GridPointWorker(object):
         self.hist = []
         
         # Set dataset
-        if dataset == 'CIFAR10':
-            self.ds = CIFAR(name='CIFAR10', root='../data/')
-        elif dataset == 'CIFAR100':
-            self.ds = CIFAR(name='CIFAR100', root='../data/')
-        else:
-            raise Exception('!! unknown dataset')
+        self.ds = getattr(DataLoader(root='../data/'), dataset)()
         
         # Define network
         self.net = getattr(NetClasses, net_class)(config, self.ds['num_classes'], cuda=cuda)
