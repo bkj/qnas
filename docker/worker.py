@@ -27,8 +27,10 @@ sys.path.append('../qnas')
 sys.path.append('../qnas/nets')
 from lr import LRSchedule
 from data import DataLoader
+
 from nets.rnet import RNet
 from nets.mnist_net import MNISTNet
+from nets.two_layer_net import TwoLayerNet
 
 # --
 # Network constructor helpers
@@ -41,6 +43,10 @@ class NetConstructors(object):
     @staticmethod
     def mnist_net(config, num_classes):
         return MNISTNet()
+    
+    @staticmethod
+    def two_layer_net(config, num_classes):
+        return TwoLayerNet(num_classes=num_classes)
 
 # --
 # Training helpers
@@ -84,14 +90,13 @@ class GridPointWorker(object):
         
         # Network
         self.net = getattr(NetConstructors, self.net_class)(self.config, self.ds['num_classes'])
-        if self.cuda:
-            self.net = self.net.cuda()
+        self.net = self.net.cuda() if self.cuda else self.net
         
         # LR scheduler
         self.lr_scheduler = functools.partial(getattr(LRSchedule, self.lr_schedule), 
             lr_init=self.lr_init, epochs=self.epochs)
         
-        # Optimizer
+        # Optimizer -- need to allow configuration
         self.opt = torch.optim.SGD(self.net.parameters(), lr=self.lr_scheduler(float(self.epoch)), 
             momentum=0.9, weight_decay=5e-4)
     
