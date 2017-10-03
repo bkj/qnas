@@ -6,12 +6,14 @@
 
 import sys
 import time
-from tqdm import tqdm
 from rq import Queue
 from redis import Redis
+from tqdm import tqdm
 from collections import deque
 
 from worker import *
+sys.path.append('..')
+from nas import RNet
 
 
 def parse_args():
@@ -21,9 +23,9 @@ def parse_args():
     parser.add_argument('--redis-host', type=str)
     parser.add_argument('--redis-port', type=int)
     
-    parser.add_argument('--result-ttl', type=int, default=60 * 60 * 2) # 2 hours
-    parser.add_argument('--ttl', type=int, default=60 * 60 * 2) # 2 hours
-    parser.add_argument('--timeout', type=int, default=60 * 60 * 2) # 2 hours
+    parser.add_argument('--result-ttl', type=int, default=60 * 60 * 6) # 6 hours
+    parser.add_argument('--ttl', type=int, default=60 * 60 * 6) # 6 hours
+    parser.add_argument('--timeout', type=int, default=60 * 60 * 6) # 6 hours
     
     return parser.parse_args()
 
@@ -52,18 +54,23 @@ if __name__ == "__main__":
     q = Queue(connection=Redis(host=args.redis_host, port=args.redis_port, password=args.redis_password))
     q.empty() # Clear queue -- could be dangerous
     
-    config = {
-        "op_keys":["double_bnconv_3","identity","add"],
-        "red_op_keys":["conv_1","double_bnconv_3","add"],
-        "model_name":"test"
-    }
-    
     # Make sure model names are unique
     n_jobs = 24
     for _ in tqdm(range(n_jobs)):
         time.sleep(0.01)
-        results.append(q.enqueue(run_job, config, epochs=1, cuda=False, 
-            ttl=args.ttl, result_ttl=args.result_ttl, timeout=args.timeout))
+        
+        config = {
+            "op_keys":["double_bnconv_3","identity","add"],
+            "red_op_keys":["conv_1","double_bnconv_3","add"],
+            "model_name":"test",
+        }
+        
+        r = q.enqueue(
+            run_job,
+            config=config, net_class='rnet', cuda=True, epochs=1,
+            ttl=args.ttl, result_ttl=args.result_ttl, timeout=args.timeout,
+        )
+        results.append(r)
     
     # Run jobs, executing callback at each one
     while True:
@@ -73,8 +80,10 @@ if __name__ == "__main__":
         r = results.popleft()
         
         if r.is_finished:
-            callback(params, result, args, failed=False)
+            config, result = r.result
+            callback(config, result, args, failed=False)
         elif r.is_failed:
-            callback(params, result, args, failed=True)
+            config, result = r.result
+            callback(config, result, args, failed=True)
         else:
             results.append(r)

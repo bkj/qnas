@@ -16,6 +16,7 @@ from torch import nn
 from torch.nn import functional as F
 from torch.autograd import Variable
 
+
 class Identity(nn.Sequential):
     def forward(self, x):
         return x
@@ -206,6 +207,7 @@ def sample_config():
     
     config['model_name'] = md5(json.dumps(config)).hexdigest()
     return config
+
 
 if __name__ == "__main__":
     op_keys = ('double_bnconv_3', 'identity', 'add')

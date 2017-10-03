@@ -29,40 +29,48 @@ import torchvision
 import torchvision.transforms as transforms
 
 sys.path.append('..')
-from nas import RNet, sample_config
+from nas import RNet
 from data import *
 from lr import LRSchedule
 
 cudnn.benchmark = True
 
 # --
+# Network constructor helpers
+
+def _rnet_constructor(config, num_classes, cuda=True):
+    net = RNet(
+        config['op_keys'],
+        config['red_op_keys'],
+        num_classes=num_classes,
+    )
+    
+    if cuda:
+        net = net.cuda()
+    
+    return net
+
+constructors = {
+    'rnet' : _rnet_constructor
+}
+
+# --
 # Training helpers
 
 class GridPointWorker(object):
     
-    def __init__(self, config, dataset='CIFAR10', epochs=20, lr_schedule='linear', lr_init=0.1,
-        lr_fail_factor=0.5, max_failures=3, cuda=True):
-        
-        self.config = config
-        self.config['vars'] = {
-            "dataset" : dataset,
-            "epochs" : epochs,
-            "lr_schedule" : lr_schedule,
-            "lr_init" : lr_init,
-            "lr_fail_factor" : lr_fail_factor,
-            "max_failures" : max_failures,
-            "cuda" : cuda,
-        }
-        
-        self.dataset = dataset
-        self.epoch = 0
-        self.epochs = epochs
-        self.lr_schedule = lr_schedule
-        self.lr_init = lr_init
-        self.fail_counter = 0
+    def __init__(self, config, net_class='rnet', dataset='CIFAR10', epochs=20, 
+        lr_schedule='linear', lr_init=0.1, lr_fail_factor=0.5, max_failures=3, cuda=True):
+    
+        self.config         = config
+        self.dataset        = dataset
+        self.epoch          = 0
+        self.epochs         = epochs
+        self.lr_schedule    = lr_schedule
+        self.lr_init        = lr_init
+        self.fail_counter   = 0
         self.lr_fail_factor = lr_fail_factor
-        self.max_failures = max_failures
-        self.cuda = cuda
+        self.max_failures   = max_failures
         
         self.hist = []
         
@@ -74,23 +82,26 @@ class GridPointWorker(object):
         else:
             raise Exception('!! unknown dataset')
         
+        # Define network
+        self.net = net_constructor(config, self.ds['num_classes'], cuda=cuda)
+        
         # Set LR scheduler
         self.lr_scheduler = functools.partial(getattr(LRSchedule, lr_schedule), lr_init=lr_init, epochs=epochs)
         
-        # Define network
-        self.net = RNet(
-            config['op_keys'],
-            config['red_op_keys'],
-            num_classes=self.ds['num_classes']
-        )
-        
-        if self.cuda:
-            self.net = self.net.cuda()
-        
         # Set optimizer
         self.opt = optim.SGD(self.net.parameters(), lr=self.lr_scheduler(float(self.epoch)), momentum=0.9, weight_decay=5e-4)
-        
-        print >> sys.stderr, self.net
+    
+    @property
+    def config(self):
+        self.config['vars'] = {
+            "dataset"        : self.dataset,
+            "epochs"         : self.epochs,
+            "lr_schedule"    : self.lr_schedule,
+            "lr_init"        : self.lr_init,
+            "lr_fail_factor" : self.lr_fail_factor,
+            "max_failures"   : self.max_failures,
+        }
+        return self.config
     
     @staticmethod
     def _train_epoch(net, loader, opt, epoch, lr_scheduler, n_train_batches):
@@ -156,7 +167,6 @@ class GridPointWorker(object):
     
     
     def run(self):
-        
         while self.epoch < self.epochs:
             
             # Train
@@ -186,13 +196,7 @@ class GridPointWorker(object):
                     self.lr_scheduler = functools.partial(getattr(LRSchedule, self.lr_schedule), lr_init=self.lr_init, epochs=self.epochs)
                     
                     # (Re)define network
-                    self.net = RNet(
-                        self.config['op_keys'],
-                        self.config['red_op_keys'],
-                        num_classes=self.ds['num_classes']
-                    )
-                    if self.cuda:
-                        self.net = self.net.cuda() 
+                    self.net = net_constructor(self.ds['num_classes'])
                     
                     # (Re)define optimizer
                     self.opt = optim.SGD(self.net.parameters(), lr=self.lr_scheduler(float(self.epoch)), momentum=0.9, weight_decay=5e-4)
