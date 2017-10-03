@@ -101,7 +101,7 @@ class GridPointWorker(object):
         for batch_idx, (data, targets) in gen:
             LRSchedule.set_lr(opt, lr_scheduler(epoch + batch_idx / n_train_batches))
             
-            if net.is_cuda:
+            if next(net.parameters()).is_cuda:
                 data, targets = data.cuda(), targets.cuda()
             
             data, targets = Variable(data), Variable(targets)
@@ -133,7 +133,7 @@ class GridPointWorker(object):
         gen = tqdm(enumerate(loader), total=len(loader))
         for batch_idx, (data, targets) in gen:
             
-            if net.is_cuda:
+            if next(net.parameters()).is_cuda:
                 data, targets = data.cuda(), targets.cuda()
             
             data, targets = Variable(data, volatile=True), Variable(targets)
