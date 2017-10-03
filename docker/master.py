@@ -20,8 +20,11 @@ def parse_args():
     parser.add_argument('--redis-password', type=str)
     parser.add_argument('--redis-host', type=str)
     parser.add_argument('--redis-port', type=int)
+    
     parser.add_argument('--result-ttl', type=int, default=60 * 60 * 2) # 2 hours
     parser.add_argument('--ttl', type=int, default=60 * 60 * 2) # 2 hours
+    parser.add_argument('--timeout', type=int, default=60 * 60 * 2) # 2 hours
+    
     return parser.parse_args()
 
 
@@ -59,7 +62,8 @@ if __name__ == "__main__":
     n_jobs = 24
     for _ in tqdm(range(n_jobs)):
         time.sleep(0.01)
-        results.append(q.enqueue(run_job, config, epochs=1, cuda=False, ttl=args.ttl, result_ttl=args.result_ttl))
+        results.append(q.enqueue(run_job, config, epochs=1, cuda=False, 
+            ttl=args.ttl, result_ttl=args.result_ttl, timeout=args.timeout))
     
     # Run jobs, executing callback at each one
     while True:
