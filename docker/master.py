@@ -52,8 +52,8 @@ if __name__ == "__main__":
     q.empty() # Clear queue -- could be dangerous
     
     # Make sure model names are unique
-    n_jobs = 32
-    for _ in tqdm(range(n_jobs)):
+    n_jobs = 48
+    for i in tqdm(range(n_jobs)):
         time.sleep(0.01)
         
         # config = {
@@ -61,8 +61,7 @@ if __name__ == "__main__":
         #     "red_op_keys":["conv_1","double_bnconv_3","add"],
         #     "model_name":"test",
         # }
-        config = {"model_name" : "test"}
-        
+        config = {"model_name" : "test-%d" % i}
         r = q.enqueue(
             run_job,
             config=config, net_class='mnist_net', dataset='MNIST', cuda=False, epochs=1,
