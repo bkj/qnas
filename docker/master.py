@@ -57,7 +57,7 @@ class BaseController(object):
     
     def run_loop(self):
         while True:
-            if len(self.jobs == 0):
+            if len(self.jobs) == 0:
                 return
             
             job = self.jobs.popleft()
@@ -108,5 +108,5 @@ if __name__ == "__main__":
             "epochs" : 1
         })
     
-    controller.run()
+    controller.run_loop()
     controller.kill_workers()

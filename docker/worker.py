@@ -276,12 +276,13 @@ class GridPointWorker(object):
 # RQ helpers
 
 def run_job(config, **kwargs):
-    time.sleep(5)
-    return None, None
-    # gpworker = GridPointWorker(config, **kwargs)
-    # results = gpworker.run()
-    # gpworker.save()
-    # return gpworker.config, results
+    gpworker = GridPointWorker(config, **kwargs)
+    results = gpworker.run()
+    gpworker.save()
+    return gpworker.config, results
+
+def run_dummy(config, **kwargs):
+    return config, {"dummy" : True}
 
 def kill():
     print >> sys.stderr, '!!! Kill Signal Received !!!'
