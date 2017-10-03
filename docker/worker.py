@@ -2,37 +2,29 @@
 
 """
     worker.py
-    
-    !! This might be more complicated than it needs to be...
 """
 
 from __future__ import division
 
 import os
 import sys
-import json
 import time
-import base64
 import argparse
 import functools
 import numpy as np
 from tqdm import tqdm
-from hashlib import md5
 from datetime import datetime
 from collections import OrderedDict
 
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
 cudnn.benchmark = True
 
-import torchvision
-import torchvision.transforms as transforms
-
-sys.path.append('..')
+sys.path.append('../qnas')
+sys.path.append('../qnas/nets')
 from lr import LRSchedule
 from data import DataLoader
 from nets.rnet import RNet
@@ -100,7 +92,7 @@ class GridPointWorker(object):
             lr_init=self.lr_init, epochs=self.epochs)
         
         # Optimizer
-        self.opt = optim.SGD(self.net.parameters(), lr=self.lr_scheduler(float(self.epoch)), 
+        self.opt = torch.optim.SGD(self.net.parameters(), lr=self.lr_scheduler(float(self.epoch)), 
             momentum=0.9, weight_decay=5e-4)
     
     @staticmethod

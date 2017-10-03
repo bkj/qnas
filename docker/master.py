@@ -13,7 +13,9 @@ from tqdm import tqdm
 from collections import deque
 
 from worker import *
-sys.path.append('..')
+
+sys.path.append('../qnas')
+sys.path.append('../qnas/nets')
 
 def parse_args():
     parser = argparse.ArgumentParser()
