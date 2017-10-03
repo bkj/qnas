@@ -11,7 +11,7 @@ import torch
 import torchvision
 from torchvision import transforms, datasets
 
-def basic(name, root='./data/', center=False, hflip=False):
+def basic(name, root='./data/', center=False, hflip=False, num_workers=8, pin_memory=True):
     
     transform_train = []
     transform_train = []
@@ -34,24 +34,24 @@ def basic(name, root='./data/', center=False, hflip=False):
         datasets.ImageFolder(root=os.path.join(root, 'manual/%s/tv_train' % name), transform=transform_train), 
         batch_size=128, 
         shuffle=True, 
-        num_workers=8,
-        pin_memory=True
+        num_workers=num_woekers,
+        pin_memory=pin_memory,
     )
     
     val_loader = torch.utils.data.DataLoader(
         datasets.ImageFolder(root=os.path.join(root, 'manual/%s/tv_val' % name), transform=transform_test), 
         batch_size=256, 
         shuffle=False, 
-        num_workers=8,
-        pin_memory=True,
+        num_workers=num_woekers,
+        pin_memory=pin_memory,
     )
     
     test_loader = torch.utils.data.DataLoader(
         datasets.ImageFolder(root=os.path.join(root, 'manual/%s/test' % name), transform=transform_test), 
         batch_size=256, 
         shuffle=False, 
-        num_workers=8,
-        pin_memory=True,
+        num_workers=num_woekers,
+        pin_memory=pin_memory,
     )
     
     n_train_batches = len(train_loader)
@@ -84,7 +84,7 @@ def STL10():
     return basic('STL10', center=True, hflip=True)
 
 
-def CIFAR(name='CIFAR10', root='./data/'):
+def CIFAR(name='CIFAR10', root='./data/', num_workers=8, pin_memory=True):
     
     mn = (0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)
     
@@ -104,24 +104,24 @@ def CIFAR(name='CIFAR10', root='./data/'):
         datasets.ImageFolder(root=os.path.join(root, 'manual/%s/tv_train' % name), transform=transform_train), 
         batch_size=128, 
         shuffle=True, 
-        num_workers=2,
-        # pin_memory=True
+        num_workers=num_workers,
+        pin_memory=pin_memory,
     )
     
     val_loader = torch.utils.data.DataLoader(
         datasets.ImageFolder(root=os.path.join(root, 'manual/%s/tv_val' % name), transform=transform_test), 
         batch_size=256, 
         shuffle=False, 
-        num_workers=2,
-        # pin_memory=True,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
     )
     
     test_loader = torch.utils.data.DataLoader(
         datasets.ImageFolder(root=os.path.join(root, 'manual/%s/test' % name), transform=transform_test), 
         batch_size=256, 
         shuffle=False, 
-        num_workers=2,
-        # pin_memory=True,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
     )
     
     n_train_batches = len(train_loader)
