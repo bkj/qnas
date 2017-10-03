@@ -41,7 +41,7 @@ cudnn.benchmark = True
 class GridPointWorker(object):
     
     def __init__(self, config, dataset='CIFAR10', epochs=20, lr_schedule='linear', lr_init=0.1,
-        lr_fail_factor=0.5, max_failures=3):
+        lr_fail_factor=0.5, max_failures=3, cuda=True):
         
         self.config = config
         self.config['vars'] = {
@@ -51,6 +51,7 @@ class GridPointWorker(object):
             "lr_init" : lr_init,
             "lr_fail_factor" : lr_fail_factor,
             "max_failures" : max_failures,
+            "cuda" : cuda,
         }
         
         self.dataset = dataset
@@ -61,6 +62,8 @@ class GridPointWorker(object):
         self.fail_counter = 0
         self.lr_fail_factor = lr_fail_factor
         self.max_failures = max_failures
+        self.cuda = cuda
+        
         self.hist = []
         
         # Set dataset
@@ -79,7 +82,10 @@ class GridPointWorker(object):
             config['op_keys'],
             config['red_op_keys'],
             num_classes=self.ds['num_classes']
-        ).cuda() 
+        )
+        
+        if self.cuda
+            self.net = self.net.cuda()
         
         # Set optimizer
         self.opt = optim.SGD(self.net.parameters(), lr=self.lr_scheduler(float(self.epoch)), momentum=0.9, weight_decay=5e-4)
@@ -87,7 +93,7 @@ class GridPointWorker(object):
         print >> sys.stderr, self.net
     
     @staticmethod
-    def _train_epoch(net, loader, opt, epoch, lr_scheduler, n_train_batches, train_history=False):
+    def _train_epoch(net, loader, opt, epoch, lr_scheduler, n_train_batches):
         _ = net.train()
         all_loss, correct, total = 0, 0, 0
         history = []
@@ -95,7 +101,10 @@ class GridPointWorker(object):
         for batch_idx, (data, targets) in gen:
             LRSchedule.set_lr(opt, lr_scheduler(epoch + batch_idx / n_train_batches))
             
-            data, targets = Variable(data.cuda()), Variable(targets.cuda())
+            if net.is_cuda:
+                data, targets = data.cuda(), targets.cuda()
+            
+            data, targets = Variable(data), Variable(targets)
             outputs, loss = net.train_step(data, targets, opt)
             
             if np.isnan(loss):
@@ -105,8 +114,7 @@ class GridPointWorker(object):
             batch_correct = (predicted == targets.data).cpu().sum()
             batch_size = targets.size(0)
             
-            if train_history:
-                history.append((loss, batch_correct / batch_size))
+            history.append((loss, batch_correct / batch_size))
             
             total += batch_size
             correct += batch_correct
@@ -125,7 +133,10 @@ class GridPointWorker(object):
         gen = tqdm(enumerate(loader), total=len(loader))
         for batch_idx, (data, targets) in gen:
             
-            data, targets = Variable(data.cuda(), volatile=True), Variable(targets.cuda())
+            if net.is_cuda:
+                data, targets = data.cuda(), targets.cuda()
+            
+            data, targets = Variable(data, volatile=True), Variable(targets)
             outputs = net(data)
             loss = F.cross_entropy(outputs, targets).data[0]
             
@@ -149,14 +160,13 @@ class GridPointWorker(object):
         while self.epoch < self.epochs:
             
             # Train
-            train_acc, train_loss, train_history =GridPointWorker._train_epoch(
+            train_acc, train_loss, train_history = GridPointWorker._train_epoch(
                 net=self.net,
                 loader=self.ds['train_loader'],
                 opt=self.opt,
                 epoch=self.epoch,
                 lr_scheduler=self.lr_scheduler,
                 n_train_batches=self.ds['n_train_batches'],
-                train_history=True,
             )
             
             # Sometimes the models don't converge...
@@ -180,7 +190,9 @@ class GridPointWorker(object):
                         self.config['op_keys'],
                         self.config['red_op_keys'],
                         num_classes=self.ds['num_classes']
-                    ).cuda() 
+                    )
+                    if self.cuda:
+                        self.net = self.net.cuda() 
                     
                     # (Re)define optimizer
                     self.opt = optim.SGD(self.net.parameters(), lr=self.lr_scheduler(float(self.epoch)), momentum=0.9, weight_decay=5e-4)

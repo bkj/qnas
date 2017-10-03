@@ -46,14 +46,17 @@ if __name__ == "__main__":
     q = Queue(connection=Redis(host=args.redis_host, port=args.redis_port, password=args.redis_password))
     q.empty() # Clear queue -- could be dangerous
     
-    config = {"op_keys":["double_bnconv_3","identity","add"],"red_op_keys":["conv_1","double_bnconv_3","add"],"model_name":"test"}
+    config = {
+        "op_keys":["double_bnconv_3","identity","add"],
+        "red_op_keys":["conv_1","double_bnconv_3","add"],
+        "model_name":"test"
+    }
     
     # Make sure model names are unique
-    
     n_jobs = 2
     for _ in tqdm(range(n_jobs)):
         time.sleep(0.01)
-        results.append(q.enqueue(run_job, config, epochs=1, ttl=args.ttl, result_ttl=args.result_ttl))
+        results.append(q.enqueue(run_job, config, epochs=1, cuda=False, ttl=args.ttl, result_ttl=args.result_ttl))
     
     # Run jobs, executing callback at each one
     while True:
