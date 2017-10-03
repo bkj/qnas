@@ -4,11 +4,11 @@
 #
 # Run worker in docker container
 
-source credentials.sh
-
 # --
 # Run a GPU worker
-nvidia-docker run \
+
+source credentials.sh
+sudo nvidia-docker run -it \
     -e QNAS_HOST=$QNAS_HOST \
     -e QNAS_PORT=$QNAS_PORT \
     -e QNAS_PASSWORD=$QNAS_PASSWORD \
@@ -17,10 +17,11 @@ nvidia-docker run \
 # --
 # .. or run lots of workers on CPUs ..
 
-# for i in $(seq 12); do
-#     sudo docker run -d \
-#         -e QNAS_HOST=$QNAS_HOST \
-#         -e QNAS_PORT=$QNAS_PORT \
-#         -e QNAS_PASSWORD=$QNAS_PASSWORD \
-#         qnas /root/projects/qnas/docker/run-worker.sh
-# done
+source credentials.sh
+for i in $(seq 12); do
+    sudo docker run -d \
+        -e QNAS_HOST=$QNAS_HOST \
+        -e QNAS_PORT=$QNAS_PORT \
+        -e QNAS_PASSWORD=$QNAS_PASSWORD \
+        qnas /root/projects/qnas/docker/run-worker.sh
+done

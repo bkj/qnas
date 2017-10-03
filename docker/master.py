@@ -2,6 +2,9 @@
 
 """
     master.py
+    
+    !! Should be run somewhere where files can be persisted
+        Eg, not in a Docker container that gets blown away
 """
 
 import sys
@@ -70,7 +73,7 @@ class BaseController(object):
     def kill_workers(self, n_workers=100):
         # !! Should add check that workers are actually dead
         for _ in range(n_workers):
-            _ = q.enqueue(kill, ttl=self.ttl, timeout=self.timeout)
+            _ = self.q.enqueue(kill, ttl=self.ttl, timeout=self.timeout)
 
 
 class SimpleController(BaseController):
