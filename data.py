@@ -105,7 +105,7 @@ def CIFAR(name='CIFAR10', root='./data/'):
         batch_size=128, 
         shuffle=True, 
         num_workers=8,
-        pin_memory=True
+        # pin_memory=True
     )
     
     val_loader = torch.utils.data.DataLoader(
@@ -113,7 +113,7 @@ def CIFAR(name='CIFAR10', root='./data/'):
         batch_size=256, 
         shuffle=False, 
         num_workers=8,
-        pin_memory=True,
+        # pin_memory=True,
     )
     
     test_loader = torch.utils.data.DataLoader(
@@ -121,7 +121,7 @@ def CIFAR(name='CIFAR10', root='./data/'):
         batch_size=256, 
         shuffle=False, 
         num_workers=8,
-        pin_memory=True,
+        # pin_memory=True,
     )
     
     n_train_batches = len(train_loader)
@@ -135,6 +135,6 @@ def CIFAR(name='CIFAR10', root='./data/'):
         'n_train_batches' : n_train_batches,
         'n_val_batches'   : n_val_batches,
         'n_test_batches'  : n_test_batches,
-        'num_classes' : len(train_loader.dataset.classes),
+        'num_classes'     : len(train_loader.dataset.classes),
     }
 
