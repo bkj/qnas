@@ -55,7 +55,7 @@ if __name__ == "__main__":
     q.empty() # Clear queue -- could be dangerous
     
     # Make sure model names are unique
-    n_jobs = 24
+    n_jobs = 10
     for _ in tqdm(range(n_jobs)):
         time.sleep(0.01)
         
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         
         r = q.enqueue(
             run_job,
-            config=config, net_class='rnet', cuda=True, epochs=1,
+            config=config, net_class='rnet', cuda=False, epochs=1,
             ttl=args.ttl, result_ttl=args.result_ttl, timeout=args.timeout,
         )
         results.append(r)
