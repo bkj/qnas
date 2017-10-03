@@ -68,20 +68,20 @@ def basic(name, root='./data/', center=False, hflip=False, num_workers=8, pin_me
         'num_classes' : len(train_loader.dataset.classes),
     }
 
-def MNIST():
-    return basic('MNIST', center=False, hflip=False)
+def MNIST(root='./data/', num_workers=8, pin_memory=True):
+    return basic('MNIST', center=False, hflip=False, num_workers=num_workers, pin_memory=pin_memory)
 
 
-def fashionMNIST():
-    return basic('fashionMNIST', center=False, hflip=True)
+def fashionMNIST(root='./data/', num_workers=8, pin_memory=True):
+    return basic('fashionMNIST', center=False, hflip=True, num_workers=num_workers, pin_memory=pin_memory)
 
 
-def SVHN():
-    return basic('SVHN', center=True, hflip=False)
+def SVHN(root='./data/', num_workers=8, pin_memory=True):
+    return basic('SVHN', center=True, hflip=False, num_workers=num_workers, pin_memory=pin_memory)
 
 
-def STL10():
-    return basic('STL10', center=True, hflip=True)
+def STL10(root='./data/', num_workers=8, pin_memory=True):
+    return basic('STL10', center=True, hflip=True, num_workers=num_workers, pin_memory=pin_memory)
 
 
 def CIFAR(name='CIFAR10', root='./data/', num_workers=8, pin_memory=True):

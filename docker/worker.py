@@ -53,6 +53,8 @@ class NetClasses(object):
             net = net.cuda()
         
         return net
+    
+    @staticmethod
 
 # --
 # Training helpers
