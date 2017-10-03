@@ -288,4 +288,4 @@ for epoch in range(epochs):
     print val_acc
 
 # powersign -> 0.6428 @ 5epoch
-# sgd -> 
+# sgd -> 0.6044 @5epoch
