@@ -6,6 +6,8 @@
     *_space arrays give operands/operations as defined in the paper
 """
 
+from functools import partial
+
 import torch
 from torch.nn import functional as F
 from torch.optim.optimizer import Optimizer
@@ -42,16 +44,19 @@ operand_space = [
 class Operands(object):
     
     @staticmethod
-    def grad_power(grad, params, state):
+    def grad_power(grad, state, params):
         power = params
         return grad ** power, state
     
     @staticmethod
-    def grad_expavg(grad, params, state):
+    def grad_expavg(grad, state, params):
+        """
+            !! If two legs of the optimizer use this, it'll get messed up
+        """
         power, beta = params
         k = 'grad_expavg_%d' % power
         
-        if not state[k]:
+        if k not in state:
             state[k] = grad.clone()
         else:
             state[k].mul_(beta).add_(1 - beta, grad ** power)
@@ -59,25 +64,38 @@ class Operands(object):
         return state[k], state
     
     @staticmethod
-    def grad_sign(grad, params, state):
+    def grad_sign(grad, state, params):
         power = params
         return torch.sign(grad ** power), state
     
     @staticmethod
-    def grad_expavg_sign(grad, params, state):
+    def grad_expavg_sign(grad, state, params):
         x, state = Operands.grad_expavg(grad, params, state)
         return torch.sign(x), state
     
     @staticmethod
-    def const(grad, params, state):
+    def const(grad, state, params):
         const = params
         return const, state
     
     @staticmethod
-    def gaussian_noise(grad, params, state):
+    def gaussian_noise(grad, state, params):
         mean, std = params
         return torch.randn(grad.size(), mean, std), state
-
+    
+    @staticmethod
+    def compound(grad, state, params):
+        op1 = partial(getattr(Operands, params['op1'][0]), params=params['op1'][1])
+        un1 = partial(getattr(UnaryOperation, params['un1'][0]), params=params['un1'][1])
+        
+        op2 = partial(getattr(Operands, params['op2'][0]), params=params['op2'][1])
+        un2 = partial(getattr(UnaryOperation, params['un2'][0]), params=params['un2'][1])
+        
+        bin_ = partial(getattr(BinaryOperation, params['bin'][0]), params=params['bin'][1])
+        
+        left, state = op1(grad, state)
+        right, state = op2(grad, state)
+        return bin_(un1(left), un2(right)), state
 
 # --
 # Unary operations
@@ -85,7 +103,7 @@ class Operands(object):
 unary_operation_space = [
     ('identity', None),
     ('negation', None),
-    ('exp', np.e),
+    ('exp', None),
     ('abs_log', None),
     ('abs_pow', 0.5),
     ('clip', 1e-5),
@@ -110,8 +128,7 @@ class UnaryOperation(object):
     
     @staticmethod
     def exp(x, params):
-        base = params
-        return base ** x
+        return torch.exp(x)
     
     @staticmethod
     def abs_log(x, params):
@@ -174,25 +191,13 @@ class BinaryOperation(object):
     def keep_left(x, y, params):
         return x
 
+
 # --
 # Configurable optimizer
 # !! not done yet, at all
 
-# SGD
-config = {
-    "op1" : ('grad_power', 1),
-    "un1" : ('identity', None),
-    
-    "op2" : ('const', 1),
-    "un2" : ('identity', None),
-    
-    "bin" : ('mul', None)
-}
-
-from functools import partial
-
 class ConfigurableOptimizer(Optimizer):
-    def __init__(self, params, config, lr=1e-3):
+    def __init__(self, params, config, lr=0.1):
         
         self.op1 = partial(getattr(Operands, config['op1'][0]), params=config['op1'][1])
         self.un1 = partial(getattr(UnaryOperation, config['un1'][0]), params=config['un1'][1])
@@ -219,16 +224,66 @@ class ConfigurableOptimizer(Optimizer):
                 grad = p.grad.data
                 state = self.state[p]
                 
-                left = self.un1(self.op1(grad, state))
-                right = self.un2(self.op1(grad, state))
-                update = self.bin(left, right)
+                left, state = self.op1(grad, state)
+                right, state = self.op2(grad, state)
+                update = self.bin(self.un1(left), self.un2(right))
+                
                 p.data.add_(-group['lr'], update)
         
         return loss
 
 # --
+# Testing
 
+import sys
+from torch.autograd import Variable
+from data import DataLoader
 from nets.two_layer_net import TwoLayerNet
+from helpers import to_numpy
 
-net = TwoLayerNet()
-opt = ConfigurableOptimizer([], config)
+sys.path.append('../docker')
+from worker import GridPointWorker
+
+configs = {
+    'sgd' : {
+        "op1" : ('grad_power', 1),
+        "un1" : ('identity', None),
+        
+        "op2" : ('const', 1),
+        "un2" : ('identity', None),
+        
+        "bin" : ('mul', None)
+    },
+    'powersign' : {
+        'op1' : ('compound', {
+            "op1" : ('grad_power', 1),
+            "un1" : ('sign', None),
+            
+            "op2" : ('grad_expavg', (1, 0.9)),
+            "un2" : ('sign', None),
+            
+            "bin" : ('mul', None),
+        }),
+        'un1' : ('exp', None),
+        
+        'op2' : ('grad_power', 1),
+        'un2' : ('identity', None),
+        
+        'bin' : ('mul', None),
+    }
+}
+
+ds = DataLoader(root='../data/', pin_memory=False, num_workers=2).CIFAR10()
+loader = ds['train_loader']
+
+net = TwoLayerNet().cuda()
+opt = ConfigurableOptimizer(net.parameters(), configs['powersign'])
+lr_scheduler = lambda x: 0.01
+
+epochs = 1
+for epoch in range(epochs):
+    print 'epoch=%d' % epoch
+    curr_acc, curr_loss, history = GridPointWorker._train_epoch(net, loader, opt, epoch, lr_scheduler, ds['n_train_batches'])
+    val_acc, val_loss = GridPointWorker._eval(net, epoch, ds['val_loader'], mode='val')
+
+val_acc
