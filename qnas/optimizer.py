@@ -86,17 +86,8 @@ class Operands(object):
     
     @staticmethod
     def compound(grad, state, params):
-        op1 = partial(getattr(Operands, params['op1'][0]), params=params['op1'][1])
-        un1 = partial(getattr(UnaryOperation, params['un1'][0]), params=params['un1'][1])
-        
-        op2 = partial(getattr(Operands, params['op2'][0]), params=params['op2'][1])
-        un2 = partial(getattr(UnaryOperation, params['un2'][0]), params=params['un2'][1])
-        
-        bin_ = partial(getattr(BinaryOperation, params['bin'][0]), params=params['bin'][1])
-        
-        left, state = op1(grad, state)
-        right, state = op2(grad, state)
-        return bin_(un1(left), un2(right)), state
+        f = parse_definition(params)
+        return f(grad, state)
 
 # --
 # Unary operations
@@ -197,17 +188,26 @@ class BinaryOperation(object):
 # !! Not tested yet -- some of the operands/operations may throw errors
 #   esp. type errors
 
+def parse_definition(definition):
+    op1 = partial(getattr(Operands, definition['op1'][0]), params=definition['op1'][1])
+    un1 = partial(getattr(UnaryOperation, definition['un1'][0]), params=definition['un1'][1])
+    
+    op2 = partial(getattr(Operands, definition['op2'][0]), params=definition['op2'][1])
+    un2 = partial(getattr(UnaryOperation, definition['un2'][0]), params=definition['un2'][1])
+    
+    bin_ = partial(getattr(BinaryOperation, definition['bin'][0]), params=definition['bin'][1])
+    
+    def f(grad, state):
+        left, state = op1(grad, state)
+        right, state = op2(grad, state)
+        return bin_(un1(left), un2(right)), state
+    
+    return f
+
+
 class ConfigurableOptimizer(Optimizer):
-    def __init__(self, params, config, lr=0.1):
-        
-        self.op1 = partial(getattr(Operands, config['op1'][0]), params=config['op1'][1])
-        self.un1 = partial(getattr(UnaryOperation, config['un1'][0]), params=config['un1'][1])
-        
-        self.op2 = partial(getattr(Operands, config['op2'][0]), params=config['op2'][1])
-        self.un2 = partial(getattr(UnaryOperation, config['un2'][0]), params=config['un2'][1])
-        
-        self.bin = partial(getattr(BinaryOperation, config['bin'][0]), params=config['bin'][1])
-        
+    def __init__(self, params, definition, lr=0.1):
+        self.update_rule = parse_definition(definition)
         super(ConfigurableOptimizer, self).__init__(params, {
             "lr" : lr,
         })
@@ -224,11 +224,7 @@ class ConfigurableOptimizer(Optimizer):
                 
                 grad = p.grad.data
                 state = self.state[p]
-                
-                left, state = self.op1(grad, state)
-                right, state = self.op2(grad, state)
-                update = self.bin(self.un1(left), self.un2(right))
-                
+                update, state = self.update_rule(grad, state)
                 p.data.add_(-group['lr'], update)
         
         return loss
