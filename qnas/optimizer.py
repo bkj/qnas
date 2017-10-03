@@ -277,13 +277,15 @@ ds = DataLoader(root='../data/', pin_memory=False, num_workers=2).CIFAR10()
 loader = ds['train_loader']
 
 net = TwoLayerNet().cuda()
-opt = ConfigurableOptimizer(net.parameters(), configs['powersign'])
+opt = ConfigurableOptimizer(net.parameters(), configs['sgd'])
 lr_scheduler = lambda x: 0.01
 
-epochs = 1
+epochs = 5
 for epoch in range(epochs):
     print 'epoch=%d' % epoch
     curr_acc, curr_loss, history = GridPointWorker._train_epoch(net, loader, opt, epoch, lr_scheduler, ds['n_train_batches'])
     val_acc, val_loss = GridPointWorker._eval(net, epoch, ds['val_loader'], mode='val')
+    print val_acc
 
-val_acc
+# powersign -> 0.6428 @ 5epoch
+# sgd -> 
