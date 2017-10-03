@@ -11,6 +11,7 @@ from __future__ import division
 import os
 import sys
 import json
+import time
 import base64
 import argparse
 import functools
@@ -275,10 +276,12 @@ class GridPointWorker(object):
 # RQ helpers
 
 def run_job(config, **kwargs):
-    gpworker = GridPointWorker(config, **kwargs)
-    results = gpworker.run()
-    gpworker.save()
-    return gpworker.config, results
+    time.sleep(5)
+    return None, None
+    # gpworker = GridPointWorker(config, **kwargs)
+    # results = gpworker.run()
+    # gpworker.save()
+    # return gpworker.config, results
 
 def kill():
     print >> sys.stderr, '!!! Kill Signal Received !!!'
