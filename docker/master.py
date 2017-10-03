@@ -2,9 +2,6 @@
 
 """
     master.py
-    
-    !! Should be run somewhere where files can be persisted
-        Eg, not in a Docker container that gets blown away
 """
 
 import sys
@@ -100,7 +97,7 @@ if __name__ == "__main__":
     
     n_jobs = 48
     for i in tqdm(range(n_jobs)):
-        controller.enqueue(run_job, {
+        controller.enqueue(run_dummy, {
             "config" : {"model_name" : "test-%d" % i},
             "net_class" : 'mnist_net',
             "dataset" : 'MNIST',

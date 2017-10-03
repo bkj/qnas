@@ -281,9 +281,13 @@ def run_job(config, **kwargs):
     gpworker.save()
     return gpworker.config, results
 
+
 def run_dummy(config, **kwargs):
     return config, {"dummy" : True}
 
-def kill():
-    print >> sys.stderr, '!!! Kill Signal Received !!!'
+
+def kill(delay=1):
+    print >> sys.stderr, '!!! Kill Signal Received -- shutting down in %ds' % delay
+    time.sleep(delay)
     os.kill(os.getppid(), 9)
+
