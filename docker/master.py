@@ -52,7 +52,7 @@ if __name__ == "__main__":
     q.empty() # Clear queue -- could be dangerous
     
     # Make sure model names are unique
-    n_jobs = 10
+    n_jobs = 32
     for _ in tqdm(range(n_jobs)):
         time.sleep(0.01)
         

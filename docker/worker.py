@@ -26,6 +26,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
+cudnn.benchmark = True
 
 import torchvision
 import torchvision.transforms as transforms
@@ -34,8 +35,6 @@ sys.path.append('..')
 from nas import RNet
 from data import DataLoader
 from lr import LRSchedule
-
-cudnn.benchmark = True
 
 # --
 # Network constructor helpers
@@ -77,7 +76,7 @@ class MNISTNet(nn.Module):
         return outputs, loss.data[0]
 
 
-class NetClasses(object):
+class NetConstructors(object):
     @staticmethod
     def rnet(config, num_classes, cuda=True):
         net = RNet(
@@ -94,6 +93,7 @@ class NetClasses(object):
     @staticmethod
     def mnist_net(config, num_classes, cuda=True):
         net = MNISTNet()
+        
         if cuda:
             net = net.cuda()
         
@@ -132,7 +132,7 @@ class GridPointWorker(object):
         self.ds = getattr(DataLoader(root='../data/'), dataset)()
         
         # Define network
-        self.net = getattr(NetClasses, net_class)(config, self.ds['num_classes'], cuda=cuda)
+        self.net = getattr(NetConstructors, net_class)(config, self.ds['num_classes'], cuda=cuda)
         
         # Set LR scheduler
         self.lr_scheduler = functools.partial(getattr(LRSchedule, lr_schedule), lr_init=lr_init, epochs=epochs)
@@ -233,7 +233,7 @@ class GridPointWorker(object):
                     self.lr_scheduler = functools.partial(getattr(LRSchedule, self.lr_schedule), lr_init=self.lr_init, epochs=self.epochs)
                     
                     # (Re)define network
-                    self.net = net_constructor(self.ds['num_classes'])
+                    self.net = getattr(NetConstructors, net_class)(config, self.ds['num_classes'], cuda=cuda)
                     
                     # (Re)define optimizer
                     self.opt = optim.SGD(self.net.parameters(), lr=self.lr_scheduler(float(self.epoch)), momentum=0.9, weight_decay=5e-4)

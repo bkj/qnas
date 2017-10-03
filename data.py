@@ -78,19 +78,19 @@ class DataLoader(object):
             'num_classes'     : len(train_loader.dataset.classes),
         }
         
-    def MNIST():
+    def MNIST(self):
         return self._basic(name='MNIST', center=False, hflip=False)
         
-    def fashionMNIST():
+    def fashionMNIST(self):
         return self._basic(name='fashionMNIST', center=False, hflip=True)
         
-    def SVHN():
+    def SVHN(self):
         return self._basic(name='SVHN', center=True, hflip=False)
         
-    def STL10():
+    def STL10(self):
         return self._basic(name='STL10', center=True, hflip=True)
     
-    def _CIFAR(name='CIFAR10'):
+    def _CIFAR(self, name='CIFAR10'):
         
         mn = (0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)
         
@@ -144,8 +144,8 @@ class DataLoader(object):
             'num_classes'     : len(train_loader.dataset.classes),
         }
     
-    def CIFAR10():
+    def CIFAR10(self):
         return self._CIFAR(name='CIFAR10')
     
-    def CIFAR100():
+    def CIFAR100(self):
         return self._CIFAR(name='CIFAR100')
