@@ -13,7 +13,6 @@ from collections import deque
 
 from worker import *
 sys.path.append('..')
-from nas import RNet
 
 
 def parse_args():
@@ -83,3 +82,9 @@ if __name__ == "__main__":
             print >> sys.stderr, 'failed!'
         else:
             results.append(r)
+    
+    # Kill the workers -- a little hacky, there's probably a better way
+    n_kills = 250
+    for _ in range(n_kills):
+        _ = q.enqueue(kill, ttl=args.ttl, timeout=args.timeout)
+        

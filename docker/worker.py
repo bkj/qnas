@@ -279,3 +279,7 @@ def run_job(config, **kwargs):
     results = gpworker.run()
     gpworker.save()
     return gpworker.config, results
+
+def kill():
+    print >> sys.stderr, '!!! Kill Signal Received !!!'
+    os.kill(os.getppid(), 9)
