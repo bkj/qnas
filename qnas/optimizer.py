@@ -9,6 +9,7 @@
 from functools import partial
 
 import torch
+from torch.autograd import Variable
 from torch.nn import functional as F
 from torch.optim.optimizer import Optimizer
 
@@ -115,7 +116,6 @@ unary_operation_space = [
     ('sign', None),
 ]
 
-
 class UnaryOperation(object):
     
     @staticmethod
@@ -194,7 +194,8 @@ class BinaryOperation(object):
 
 # --
 # Configurable optimizer
-# !! not done yet, at all
+# !! Not tested yet -- some of the operands/operations may throw errors
+#   esp. type errors
 
 class ConfigurableOptimizer(Optimizer):
     def __init__(self, params, config, lr=0.1):
@@ -233,13 +234,12 @@ class ConfigurableOptimizer(Optimizer):
         return loss
 
 # --
-# Testing
+# Experiments
 
 import sys
-from torch.autograd import Variable
 from data import DataLoader
-from nets.two_layer_net import TwoLayerNet
 from helpers import to_numpy
+from nets.two_layer_net import TwoLayerNet
 
 sys.path.append('../docker')
 from worker import GridPointWorker
@@ -270,14 +270,39 @@ configs = {
         'un2' : ('identity', None),
         
         'bin' : ('mul', None),
-    }
+    },
+    'addsign' : {
+        'op1' : ('compound', {
+            "op1" : ('compound', {
+                "op1" : ('grad_power', 1),
+                "un1" : ('sign', None),
+                
+                "op2" : ('grad_expavg', (1, 0.9)),
+                "un2" : ('sign', None),
+                
+                "bin" : ('mul', None),
+            }),
+            "un1" : ('identity', None),
+            
+            "op2" : ('const', 1),
+            "un2" : ('identity', None),
+            
+            "bin" : ('add', None)
+        }),
+        'un1' : ('identity', None),
+        
+        'op2' : ('grad_power', 1),
+        'un2' : ('identity', None),
+        
+        'bin' : ('mul', None),
+    },
 }
 
 ds = DataLoader(root='../data/', pin_memory=False, num_workers=2).CIFAR10()
 loader = ds['train_loader']
 
 net = TwoLayerNet().cuda()
-opt = ConfigurableOptimizer(net.parameters(), configs['sgd'])
+opt = ConfigurableOptimizer(net.parameters(), configs['addsign'])
 lr_scheduler = lambda x: 0.01
 
 epochs = 5
@@ -288,4 +313,5 @@ for epoch in range(epochs):
     print val_acc
 
 # powersign -> 0.6428 @ 5epoch
-# sgd -> 0.6044 @5epoch
+# sgd       -> 0.6044 @ 5epoch
+# addsign   -> 0.6508
