@@ -53,7 +53,7 @@ if __name__ == "__main__":
     }
     
     # Make sure model names are unique
-    n_jobs = 2
+    n_jobs = 24
     for _ in tqdm(range(n_jobs)):
         time.sleep(0.01)
         results.append(q.enqueue(run_job, config, epochs=1, cuda=False, ttl=args.ttl, result_ttl=args.result_ttl))

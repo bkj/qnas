@@ -6,7 +6,7 @@
 
 source credentials.sh
 
-nvidia-docker run -it \
+nvidia-docker run \
     -e QNAS_HOST=$QNAS_HOST \
     -e QNAS_PORT=$QNAS_PORT \
     -e QNAS_PASSWORD=$QNAS_PASSWORD \

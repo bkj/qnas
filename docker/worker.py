@@ -84,7 +84,7 @@ class GridPointWorker(object):
             num_classes=self.ds['num_classes']
         )
         
-        if self.cuda
+        if self.cuda:
             self.net = self.net.cuda()
         
         # Set optimizer
