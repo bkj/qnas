@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-    qnas-master.py
+    master.py
 """
 
 import sys
@@ -13,7 +13,6 @@ from collections import deque
 
 from worker import *
 sys.path.append('..')
-
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -28,63 +27,83 @@ def parse_args():
     
     return parser.parse_args()
 
+# --
+# Controller classes
 
-def callback(config, result, args):
-    """ action to take when results are returned """
-    print >> sys.stderr, 'job finished: %s' % json.dumps(config)
+class BaseController(object):
     
-    result_path = os.path.join('results', args.run, config['model_name'])
-    if not os.path.exists(os.path.dirname(result_path)):
-        os.makedirs(os.path.dirname(result_path))
+    def __init__(self, args):
+        self.jobs = deque()
+        self.q = Queue(connection=Redis(host=args.redis_host, port=args.redis_port, password=args.redis_password))
+        self.q.empty()
+        
+        self.ttl = args.ttl
+        self.result_ttl = args.result_ttl
+        self.timeout = args.timeout
+        self.fail_counter = 0
     
-    open(result_path, 'w').write('\n'.join(map(json.dumps, result)))
+    def enqueue(self, func, obj, sleep_interval=None):
+        obj.update({
+            "ttl" : self.ttl,
+            "result_ttl" : self.result_ttl,
+            "timeout" : self.timeout,
+        })
+        self.jobs.append(self.q.enqueue(func, **obj))
+        if sleep_interval:
+            time.sleep(sleep_interval)
+    
+    def run_loop(self):
+        while True:
+            if len(self.jobs == 0):
+                return
+            
+            job = self.jobs.popleft()
+            
+            if job.is_finished:
+                self.callback(job.result)
+            elif job.is_failed:
+                self.fail_counter += 1
+                print >> sys.stderr, 'fail_counter=%d' % self.fail_counter
+            else:
+                self.jobs.append(job)
+    
+    def kill_workers(self, n_workers=100):
+        # !! Should add check that workers are actually dead
+        for _ in range(n_workers):
+            _ = q.enqueue(kill, ttl=self.ttl, timeout=self.timeout)
+
+
+class SimpleController(BaseController):
+    
+    def callback(self, result):
+        """ 
+            action to take when results are returned 
+            ... eg, most interesting things are going to enqueue more jobs ...
+        """
+        config, hist = result
+        print >> sys.stderr, 'job finished: %s' % json.dumps(config)
+        
+        # result_path = os.path.join('results', args.run, config['model_name'])
+        # if not os.path.exists(os.path.dirname(result_path)):
+        #     os.makedirs(os.path.dirname(result_path))
+        
+        # open(result_path, 'w').write('\n'.join(map(json.dumps, result)))
 
 
 if __name__ == "__main__":
     
     args = parse_args()
+    controller = SimpleController(args)
     
-    c = Redis(host=args.redis_host, port=args.redis_port, password=args.redis_password)
-    
-    results = deque()
-    q = Queue(connection=Redis(host=args.redis_host, port=args.redis_port, password=args.redis_password))
-    q.empty() # Clear queue -- could be dangerous
-    
-    # Make sure model names are unique
     n_jobs = 48
     for i in tqdm(range(n_jobs)):
-        time.sleep(0.01)
-        
-        # config = {
-        #     "op_keys":["double_bnconv_3","identity","add"],
-        #     "red_op_keys":["conv_1","double_bnconv_3","add"],
-        #     "model_name":"test",
-        # }
-        config = {"model_name" : "test-%d" % i}
-        r = q.enqueue(
-            run_job,
-            config=config, net_class='mnist_net', dataset='MNIST', cuda=False, epochs=1,
-            ttl=args.ttl, result_ttl=args.result_ttl, timeout=args.timeout,
-        )
-        results.append(r)
+        controller.enqueue(run_job, {
+            "config" : {"model_name" : "test-%d" % i},
+            "net_class" : 'mnist_net',
+            "dataset" : 'MNIST',
+            "cuda" : False,
+            "epochs" : 1
+        })
     
-    # Run jobs, executing callback at each one
-    while True:
-        if len(results) == 0:
-            break
-        
-        r = results.popleft()
-        
-        if r.is_finished:
-            config, result = r.result
-            callback(config, result, args)
-        elif r.is_failed:
-            print >> sys.stderr, 'failed!'
-        else:
-            results.append(r)
-    
-    # Kill the workers -- a little hacky, there's probably a better way
-    n_kills = 250
-    for _ in range(n_kills):
-        _ = q.enqueue(kill, ttl=args.ttl, timeout=args.timeout)
-        
+    controller.run()
+    controller.kill_workers()
