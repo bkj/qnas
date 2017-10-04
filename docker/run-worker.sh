@@ -6,8 +6,4 @@
 
 cd /root/projects/qnas/docker/
 git pull
-
-rqworker \
-    --url redis://:$QNAS_PASSWORD@$QNAS_HOST:$QNAS_PORT \
-    --path ../qnas/ \
-    kill jobs 2>&1 | tee -a log
+rqworker --url redis://:$QNAS_PASSWORD@$QNAS_HOST:$QNAS_PORT kill jobs 2>&1 | tee -a log
