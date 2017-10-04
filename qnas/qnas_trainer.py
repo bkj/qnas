@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-    worker.py
+    qnas_trainer.py
     
     !! This could certainly be simplified -- too much redundant boilerplate
 """
