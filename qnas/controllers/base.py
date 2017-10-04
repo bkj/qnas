@@ -8,6 +8,7 @@ import os
 import sys
 import time
 import json
+from datetime import datetime
 from rq import Queue
 from redis import Redis
 from tqdm import tqdm
@@ -65,13 +66,15 @@ class BaseController(object):
             if job.is_finished:
                 self.callback(job.result)
             elif job.is_failed:
+                print job
                 self.fail_counter += 1
                 print >> sys.stderr, 'fail_counter=%d' % self.fail_counter
             else:
                 self.jobs.append(job)
             
-            time.sleep(1)
-            print len(self.jobs)
+            time.sleep(0.1)
+            sys.stdout.write("\r%d jobs | %s" % (len(self.jobs), datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            sys.stdout.flush()
     
     def kill_workers(self, delay=1, n_workers=100):
         # !! Should add check that workers are actually dead

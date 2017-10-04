@@ -87,7 +87,7 @@ class RandomOptimizerController(BaseController, OptimizerSampler):
         
         self.all_hist = []
     
-    def initialize(self, depth=1, n_jobs=5):
+    def initialize(self, depth=1, n_jobs=100):
         for i in tqdm(range(n_jobs)):
             self.enqueue(qnas_trainer_run, {
                 "config" : {
@@ -99,7 +99,7 @@ class RandomOptimizerController(BaseController, OptimizerSampler):
                     "lr_init"     : 0.1,
                     "opt_arch"    : self.sample(depth=depth),
                 },
-                "cuda" : True,
+                "cuda" : False,
                 "lr_fail_factor" : 0.1,
                 "dataset_num_workers" : 8
             })

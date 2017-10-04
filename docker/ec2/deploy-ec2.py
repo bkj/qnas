@@ -15,7 +15,7 @@ import argparse
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--instance-count', type=int, default=1)
-    parser.add_argument('--image-id', type=str, default='ami-f9ba4083')
+    parser.add_argument('--image-id', type=str, default='ami-a770b5dd')
     parser.add_argument('--gpu', action="store_true")
     parser.add_argument('--njobs', type=int, default=1)
     
@@ -68,21 +68,21 @@ def make_gpu_cmd(credentials, njobs=1):
 sudo nvidia-smi -pm ENABLED -i 0
 sudo nvidia-smi -ac 2505,875 -i 0
 
-# for i in $(seq %d); do
-#     sudo nvidia-docker run -d \
-#         -e QNAS_HOST=%s \
-#         -e QNAS_PORT=%s \
-#         -e QNAS_PASSWORD=%s \
-#         qnas /root/projects/qnas/docker/run-worker.sh
-# done
+for i in $(seq %d); do
+    sudo nvidia-docker run -d \
+        -e QNAS_HOST=%s \
+        -e QNAS_PORT=%s \
+        -e QNAS_PASSWORD=%s \
+        qnas /root/projects/qnas/docker/run-worker.sh
+done
 
-# while true; do
-#     if [ $(sudo docker ps | wc -l) -eq 1 ]; then
-#         echo "no docker containers -- halting!"
-#         sudo halt
-#     fi
-#     sleep 5
-# done
+while true; do
+    if [ $(sudo docker ps | wc -l) -eq 1 ]; then
+        echo "no docker containers -- halting!"
+        sudo halt
+    fi
+    sleep 5
+done
 
     """ % (
         njobs,

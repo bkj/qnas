@@ -17,7 +17,6 @@ from controllers.optimizer_search import RandomOptimizerController
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--run', type=str, default='qnas-0')
     parser.add_argument('--redis-password', type=str)
     parser.add_argument('--redis-host', type=str)
     parser.add_argument('--redis-port', type=int)
@@ -26,7 +25,7 @@ def parse_args():
     
     parser.add_argument('--result-ttl', type=int, default=60 * 60 * 6) # 6 hours
     parser.add_argument('--ttl', type=int, default=60 * 60 * 6) # 6 hours
-    parser.add_argument('--timeout', type=int, default=60 * 60 * 6) # 6 hours
+    parser.add_argument('--timeout', type=int, default=60 * 10) # 10 minutes
     
     return parser.parse_args()
 
