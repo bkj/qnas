@@ -92,18 +92,18 @@ class DummyController(BaseController):
         for i in tqdm(range(n_jobs)):
             self.enqueue(qnas_trainer_run, {
                 "config"    : {
-                    "model_name" : "test-%d" % i,
-                    "net_class"  : 'MNISTNet',
-                    "dataset"    : 'MNIST',
-                    "epochs"     : 1,
+                    "model_name"  : "mnist-%d" % i,
+                    "net_class"   : 'MNISTNet',
+                    "dataset"     : 'MNIST',
+                    "epochs"      : 1,
                     "lr_schedule" : 'linear',
-                    "lr_init"     : 0.1
+                    "lr_init"     : 0.1,
                 },
-                "cuda"      : True,
+                "cuda" : True,
             })
     
     def callback(self, result):
         config, hist = result
         print >> sys.stderr, 'job finished: %s' % json.dumps(config)
-        print >> sys.stderr, json.dumps(hist[-1])
+        print >> sys.stderr, hist[-1]['train_acc'], hist[-1]['val_acc'], hist[-1]['test_acc']
     

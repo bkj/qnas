@@ -26,18 +26,7 @@ cudnn.benchmark = True
 
 from lr import LRSchedule
 from data import DataLoader
-from nets.rnet import RNet
-from nets.mnist_net import MNISTNet
-from nets.two_layer_net import TwoLayerNet
-
-# --
-# Network constructor helpers
-
-net_contructors = {
-    "RNet" : RNet,
-    "MNISTNet" : MNISTNet,
-    "TwoLayerNet" : TwoLayerNet,
-}
+from nets import net_constructors
 
 # --
 # Training helpers
@@ -71,7 +60,7 @@ class QNASTrainer(object):
             num_workers=self.dataset_num_workers), self.dataset)()
         
         # Network
-        self.net = net_contructors[self.net_class](self.config, self.ds['num_classes'])
+        self.net = net_constructors[self.net_class](self.config, self.ds['num_classes'])
         if self.cuda:
             self.net = self.net.cuda()
     
