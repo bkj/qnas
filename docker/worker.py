@@ -2,6 +2,8 @@
 
 """
     worker.py
+    
+    !! This could certainly be simplified -- too much redundant boilerplate
 """
 
 from __future__ import division
@@ -69,9 +71,9 @@ class QNASTrainer(object):
         self.fail_counter = 0
         self.hist = []
         
-        self._reset_network()
+        self._setup()
         
-    def _reset_network(self):
+    def _setup(self):
         # Reset epoch count
         self.epoch = 0
         
@@ -81,7 +83,8 @@ class QNASTrainer(object):
         
         # Network
         self.net = net_contructors[self.net_class](self.config, self.ds['num_classes'])
-        self.net = self.net.cuda() if self.cuda else self.net
+        if self.cuda:
+            self.net = self.net.cuda()
     
     @staticmethod
     def _train_epoch(net, loader, epoch, n_train_batches):
@@ -117,7 +120,7 @@ class QNASTrainer(object):
         return curr_acc, curr_loss, history
     
     @staticmethod
-    def _eval(net, epoch, loader, mode='val'):
+    def _eval(net, loader, epoch, mode='val'):
         _ = net.eval()
         all_loss, correct, total = 0, 0, 0
         gen = tqdm(enumerate(loader), total=len(loader))
@@ -127,6 +130,7 @@ class QNASTrainer(object):
                 data, targets = data.cuda(), targets.cuda()
             
             data, targets = Variable(data, volatile=True), Variable(targets)
+            
             outputs = net(data)
             loss = F.cross_entropy(outputs, targets).data[0]
             
@@ -161,15 +165,15 @@ class QNASTrainer(object):
                 if self.fail_counter <= self.max_failures:
                     print >> sys.stderr, 'grid-point.py: train_loss is NaN -- reducing LR and restarting'
                     self.config['lr_init'] *= self.lr_fail_factor
-                    self._reset_network()
+                    self._setup()
                     continue
                 else:
                     print >> sys.stderr, 'grid-point.py: train_loss is NaN -- too many failures -- exiting'
                     os._exit(0)
             
             # Eval on val + test datasets
-            val_acc, val_loss = QNASTrainer._eval(self.net, self.epoch, self.ds['val_loader'], mode='val')
-            test_acc, test_loss = QNASTrainer._eval(self.net, self.epoch, self.ds['test_loader'], mode='test')
+            val_acc, val_loss = QNASTrainer._eval(self.net, self.ds['val_loader'], self.epoch,  mode='val')
+            test_acc, test_loss = QNASTrainer._eval(self.net, self.ds['test_loader'], self.epoch, mode='test')
             
             # Log performance
             self.hist.append({
