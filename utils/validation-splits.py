@@ -33,6 +33,7 @@ for name in glob('./data/*'):
     df = pd.DataFrame(fs)
     df.columns = ('lab', 'fname')
     df['src'] = df.apply(lambda x: os.path.join(src, x['lab'], x['fname']), 1)
+    df = df.sort_values('src')
     
     train, val = train_test_split(df, stratify=df.lab, train_size=train_size, random_state=random_state)
     train, val = train.copy(), val.copy()
