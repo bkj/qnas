@@ -16,3 +16,5 @@ python master.py \
     --redis-host $QNAS_HOST \
     --redis-port $QNAS_PORT \
     --empty
+
+

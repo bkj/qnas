@@ -10,6 +10,7 @@ import argparse
 
 sys.path.append('../qnas')
 from controllers.base import DummyController
+from controllers.optimizer import RandomOptimizerController
 
 # --
 # Args
@@ -35,7 +36,7 @@ def parse_args():
 if __name__ == "__main__":
     
     args = parse_args()
-    controller = DummyController(args)
+    controller = RandomOptimizerController(args)
     
     if args.empty:
         _ = controller.q.empty()

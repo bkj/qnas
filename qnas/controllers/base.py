@@ -14,16 +14,10 @@ from tqdm import tqdm
 from collections import deque
 
 sys.path.append('..')
-from qnas_trainer import QNASTrainer
+from qnas_trainer import qnas_trainer_run
 
 # --
 # Helpers
-
-def qnas_trainer_run(config, **kwargs):
-    qtrainer = QNASTrainer(config, **kwargs)
-    results = qtrainer._train()
-    qtrainer.save()
-    return qtrainer.config, results
 
 
 def kill(delay=1):
@@ -80,11 +74,15 @@ class BaseController(object):
         # !! Should add check that workers are actually dead
         for _ in range(n_workers):
             _ = self.q.enqueue(kill, ttl=self.ttl, timeout=self.timeout)
+    
+    def initialize(self, n_jobs=2):
+        raise NotImplementedError()
+    
+    def callback(self, result):
+        raise NotImplementedError()
 
 # --
 # Example
-
-
 
 class DummyController(BaseController):
     

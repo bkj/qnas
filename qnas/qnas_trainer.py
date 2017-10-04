@@ -60,7 +60,7 @@ class QNASTrainer(object):
             num_workers=self.dataset_num_workers), self.dataset)()
         
         # Network
-        self.net = net_constructors[self.net_class](self.config, self.ds['num_classes'])
+        self.net = net_constructors[self.net_class](self.config, num_classes=self.ds['num_classes'])
         if self.cuda:
             self.net = self.net.cuda()
     
@@ -177,3 +177,9 @@ class QNASTrainer(object):
     
     def save(self):
         torch.save(self.net.state_dict(), self.config['model_name'])
+
+def qnas_trainer_run(config, **kwargs):
+    qtrainer = QNASTrainer(config, **kwargs)
+    results = qtrainer._train()
+    qtrainer.save()
+    return qtrainer.config, results

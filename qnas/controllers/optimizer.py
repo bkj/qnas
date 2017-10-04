@@ -4,6 +4,15 @@
     controllers/optimizer.py
 """
 
+import sys
+import json
+import random
+from tqdm import tqdm
+from base import BaseController
+
+sys.path.append('..')
+from qnas_trainer import qnas_trainer_run
+
 optimizer_space = {
     "op" : [
         ('grad_power', 1),
@@ -54,10 +63,7 @@ optimizer_space = {
     ]
 }
 
-import random
-from pprint import pprint
-
-class RandomOptimizerController(object):
+class RandomOptimizerController(BaseController):
     def sample(self, depth=0, seed=None):
         if seed:
             random.seed(123)
@@ -71,9 +77,47 @@ class RandomOptimizerController(object):
             
             "bin" : random.choice(optimizer_space['bin'])
         }
+    
+    def initialize(self, n_jobs=5):
+        for i in tqdm(range(n_jobs)):
+            self.enqueue(qnas_trainer_run, {
+                "config" : {
+                    "model_name"  : "opt-test-%d" % i,
+                    "net_class"   : 'OptNetSmall',
+                    "dataset"     : 'CIFAR10',
+                    "epochs"      : 1,
+                    "lr_schedule" : 'constant',
+                    "lr_init"     : 0.01,
+                    "opt_arch"    : {
+                        'op1' : ('compound', {
+                            "op1" : ('grad_power', 1),
+                            "un1" : 'sign',
+                            
+                            "op2" : ('grad_expavg', (1, 0.9)),
+                            "un2" : 'sign',
+                            
+                            "bin" : 'mul',
+                        }),
+                        'un1' : 'exp',
+                        
+                        'op2' : ('grad_power', 1),
+                        'un2' : 'identity',
+                        
+                        'bin' : 'mul',
+                    }
+                },
+                "cuda" : True,
+            })
+    
+    def callback(self, result):
+        config, hist = result
+        print >> sys.stderr, 'job finished: %s' % json.dumps(config)
+        for h in hist:
+            print json.dumps({
+                "train_acc" : h['train_acc'], 
+                "val_acc" : h['val_acc'],
+                "test_acc" : h['test_acc'],
+            })
 
 
-randopt = RandomOptimizerController()
-
-pprint(randopt.sample(depth=2))
 
