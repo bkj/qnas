@@ -12,7 +12,6 @@ import os
 import sys
 import time
 import argparse
-import functools
 import numpy as np
 from tqdm import tqdm
 from datetime import datetime
@@ -44,28 +43,18 @@ net_contructors = {
 # Training helpers
 
 class QNASTrainer(object):
+    def __init__(self, config, lr_fail_factor=0.5, max_failures=3, cuda=True, dataset_num_workers=2):
     
-    def __init__(self, config, net_class='rnet', dataset='CIFAR10', epochs=20, 
-        lr_schedule='linear', lr_init=0.1, lr_fail_factor=0.5, max_failures=3, 
-        cuda=True, dataset_num_workers=2):
-    
-        self.config = config
-        self.config.update({
-            "net_class"      : net_class,
-            "dataset"        : dataset,
-            "epochs"         : epochs,
-            "lr_schedule"    : lr_schedule,
-            "lr_init"        : lr_init,
-            "lr_fail_factor" : lr_fail_factor,
-            "max_failures"   : max_failures,
-        })
+        # Model parameters
+        self.config    = config
+        self.net_class = config['net_class']
+        self.dataset   = config['dataset']
+        self.epochs    = config['epochs']
         
-        self.net_class      = net_class
-        self.dataset        = dataset
-        self.epochs         = epochs
-        self.lr_fail_factor = lr_fail_factor
-        self.max_failures   = max_failures
-        self.cuda           = cuda
+        # Execution parameters
+        self.lr_fail_factor      = lr_fail_factor
+        self.max_failures        = max_failures
+        self.cuda                = cuda
         self.dataset_num_workers = dataset_num_workers
         
         self.fail_counter = 0
@@ -199,10 +188,3 @@ class QNASTrainer(object):
     
     def save(self):
         torch.save(self.net.state_dict(), self.config['model_name'])
-    
-    @staticmethod
-    def run(config, **kwargs):
-        qtrainer = QNASTrainer(config, **kwargs)
-        results = qtrainer._train()
-        qtrainer.save()
-        return qtrainer.config, results

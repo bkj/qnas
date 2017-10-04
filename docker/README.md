@@ -4,8 +4,8 @@ Tools for distributed network training
 
 ```
 
-    - master.py -- Pushes jobs to a queue
-    - worker.py -- Runs jobs
+    - run-master.sh -- Pushes jobs to a queue
+    - run-worker.sh -- Runs workers that read model specs from queue and train
     
 ```
 

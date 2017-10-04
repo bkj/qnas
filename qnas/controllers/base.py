@@ -20,7 +20,11 @@ from qnas_trainer import QNASTrainer
 # Helpers
 
 def qnas_trainer_run(config, **kwargs):
-    return QNASTrainer.run(config, **kwargs)
+    qtrainer = QNASTrainer(config, **kwargs)
+    results = qtrainer._train()
+    qtrainer.save()
+    return qtrainer.config, results
+
 
 def kill(delay=1):
     print >> sys.stderr, '!!! Kill Signal Received -- shutting down in %ds' % delay
@@ -80,19 +84,26 @@ class BaseController(object):
 # --
 # Example
 
+
+
 class DummyController(BaseController):
     
     def initialize(self, n_jobs=2):
         for i in tqdm(range(n_jobs)):
             self.enqueue(qnas_trainer_run, {
-                "config"    : {"model_name" : "test-%d" % i},
-                "net_class" : 'MNISTNet',
-                "dataset"   : 'MNIST',
+                "config"    : {
+                    "model_name" : "test-%d" % i,
+                    "net_class"  : 'MNISTNet',
+                    "dataset"    : 'MNIST',
+                    "epochs"     : 1,
+                    "lr_schedule" : 'linear',
+                    "lr_init"     : 0.1
+                },
                 "cuda"      : True,
-                "epochs"    : 1
             })
     
     def callback(self, result):
         config, hist = result
         print >> sys.stderr, 'job finished: %s' % json.dumps(config)
+        print >> sys.stderr, json.dumps(hist[-1])
     
