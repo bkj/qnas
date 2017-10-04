@@ -34,6 +34,6 @@ WORKDIR /root/projects/qnas/
 RUN ./utils/download.sh
 
 # Make sure have most recent version
-RUN echo "checkpoint ... 3"
+RUN echo "checkpoint ... 4"
 WORKDIR /root/projects/qnas/
 RUN git pull
