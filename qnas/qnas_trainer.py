@@ -180,9 +180,3 @@ class QNASTrainer(object):
     
     def save(self):
         torch.save(self.net.state_dict(), self.config['model_name'])
-
-def qnas_trainer_run(config, **kwargs):
-    qtrainer = QNASTrainer(config, **kwargs)
-    results = qtrainer._train()
-    qtrainer.save()
-    return qtrainer.config, results

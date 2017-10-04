@@ -1,18 +1,13 @@
 #!/usr/bin/env python
 
 """
-    controllers/optimizer.py
+    controllers/optimizer_search.py
 """
 
 import sys
 import json
 import random
 from uuid import uuid4
-from tqdm import tqdm
-from base import BaseController
-
-sys.path.append('..')
-from qnas_trainer import qnas_trainer_run
 
 optimizer_space = {
     "op" : [
@@ -81,15 +76,15 @@ class OptimizerSampler(object):
         }
 
 
-class RandomOptimizerController(BaseController, OptimizerSampler):
-    def __init__(self, args):
-        super(RandomOptimizerController, self).__init__(args)
-        
-        self.all_hist = []
+class RandomOptimizerController(object):
+    def __init__(self, depth=0):
+        self.depth = depth
+        self.sampler = OptimizerSampler()
     
-    def initialize(self, depth=1, n_jobs=100):
-        for i in tqdm(range(n_jobs)):
-            self.enqueue(qnas_trainer_run, {
+    def next(self, last=None):
+        if not last:
+            return {
+                "func" : "qnas_trainer",
                 "config" : {
                     "model_name"  : "opt-test-%s" % str(uuid4()),
                     "net_class"   : 'OptNetSmall',
@@ -97,20 +92,19 @@ class RandomOptimizerController(BaseController, OptimizerSampler):
                     "epochs"      : 1,
                     "lr_schedule" : 'constant',
                     "lr_init"     : 0.1,
-                    "opt_arch"    : self.sample(depth=depth),
+                    "opt_arch"    : self.sampler.sample(depth=self.depth),
                 },
-                "cuda" : False,
+                "cuda" : True,
                 "lr_fail_factor" : 0.1,
                 "dataset_num_workers" : 8
-            })
-    
-    def callback(self, result):
-        config, hist = result
-        print >> sys.stderr, 'job finished: %s' % json.dumps(config)
-        for h in hist:
-            print json.dumps({
-                "train_acc" : h['train_acc'], 
-                "val_acc" : h['val_acc'],
-                "test_acc" : h['test_acc'],
-            })
-        
+            }
+        else:
+            config, hist = last
+            print >> sys.stderr, 'job finished: %s' % json.dumps(config)
+            for h in hist:
+                print json.dumps({
+                    "train_acc" : h['train_acc'], 
+                    "val_acc" : h['val_acc'],
+                    "test_acc" : h['test_acc'],
+                })
+            
