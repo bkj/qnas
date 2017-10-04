@@ -7,6 +7,7 @@
 
 import sys
 import json
+import functools
 import numpy as np
 from hashlib import md5
 from datetime import datetime
@@ -16,6 +17,8 @@ from torch import nn
 from torch.nn import functional as F
 from torch.autograd import Variable
 
+sys.path.append('..')
+from lr import LRSchedule
 
 class Identity(nn.Sequential):
     def forward(self, x):

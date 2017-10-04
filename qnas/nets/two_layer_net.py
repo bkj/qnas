@@ -13,12 +13,17 @@
     simplest thing, but who knows if there's dropout / whatever
 """
 
+import sys
+import functools
 import numpy as np
 
 import torch
 from torch import nn
 from torch.autograd import Variable
 from torch.nn import functional as F
+
+sys.path.append('..')
+from lr import LRSchedule
 
 class TwoLayerNet(nn.Module):
     def __init__(self, config, num_classes=10, input_channels=3, hidden_channels=32, input_shape=32):
