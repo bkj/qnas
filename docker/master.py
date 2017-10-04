@@ -5,9 +5,11 @@
 """
 
 import os
-from worker import *
+import sys
+import argparse
 
 sys.path.append('../qnas')
+from qnas_trainer import QNASTrainer
 from controllers.base import DummyController
 
 # --

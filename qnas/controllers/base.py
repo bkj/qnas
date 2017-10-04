@@ -13,8 +13,14 @@ from redis import Redis
 from tqdm import tqdm
 from collections import deque
 
+sys.path.append('..')
+from qnas_trainer import QNASTrainer
+
 # --
 # Helpers
+
+def qnas_trainer_run(config, **kwargs):
+    return QNASTrainer.run(config, **kwargs)
 
 def kill(delay=1):
     print >> sys.stderr, '!!! Kill Signal Received -- shutting down in %ds' % delay
@@ -78,12 +84,12 @@ class DummyController(BaseController):
     
     def initialize(self, n_jobs=2):
         for i in tqdm(range(n_jobs)):
-            self.enqueue(run_dummy, {
-                "config" : {"model_name" : "test-%d" % i},
-                "net_class" : 'mnist_net',
-                "dataset" : 'MNIST',
-                "cuda" : False,
-                "epochs" : 1
+            self.enqueue(qnas_trainer_run, {
+                "config"    : {"model_name" : "test-%d" % i},
+                "net_class" : 'MNISTNet',
+                "dataset"   : 'MNIST',
+                "cuda"      : True,
+                "epochs"    : 1
             })
     
     def callback(self, result):

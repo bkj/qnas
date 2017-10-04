@@ -25,7 +25,6 @@ import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
 cudnn.benchmark = True
 
-sys.path.append('../qnas')
 from lr import LRSchedule
 from data import DataLoader
 from nets.rnet import RNet
@@ -67,6 +66,7 @@ class QNASTrainer(object):
         self.lr_fail_factor = lr_fail_factor
         self.max_failures   = max_failures
         self.cuda           = cuda
+        self.dataset_num_workers = dataset_num_workers
         
         self.fail_counter = 0
         self.hist = []
@@ -79,7 +79,7 @@ class QNASTrainer(object):
         
         # Set dataset
         self.ds = getattr(DataLoader(root='../data/', pin_memory=self.cuda, 
-            num_workers=dataset_num_workers), self.dataset)()
+            num_workers=self.dataset_num_workers), self.dataset)()
         
         # Network
         self.net = net_contructors[self.net_class](self.config, self.ds['num_classes'])
@@ -202,7 +202,7 @@ class QNASTrainer(object):
     
     @staticmethod
     def run(config, **kwargs):
-        qnas_trainer = QNASTrainer(config, **kwargs)
-        results = qnas_trainer._train()
-        qnas_trainer.save()
-        return qnas_trainer.config, results
+        qtrainer = QNASTrainer(config, **kwargs)
+        results = qtrainer._train()
+        qtrainer.save()
+        return qtrainer.config, results
