@@ -3,9 +3,7 @@
 """
     deploy-ec2.py
     
-    Deploy a bunch of Docker workers on EC2
-    
-    !! May want to run multiple workers on each machine
+    Deploy a Docker workers via EC2
 """
 
 import os
@@ -18,18 +16,17 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--instance-count', type=int, default=1)
     parser.add_argument('--image-id', type=str, default='ami-f9ba4083')
-    parser.add_argument('--instance-type', type=str, default='m3.large')
     parser.add_argument('--gpu', action="store_true")
     parser.add_argument('--njobs', type=int, default=1)
     
     args = parser.parse_args()
     
-    if args.instance_type == 'm3.large':
-        args.spot_price = 0.03
-    elif args.instance_type == 'p2.xlarge':
+    if args.gpu:
+        args.instance_type = 'p2.xlarge'
         args.spot_price = 0.25
     else:
-        raise Exception("!! don't know a good price for instance_type=%s" % args.instance_type)
+        args.instance_type = 'm3.large'
+        args.spot_price = 0.03
     
     return args
 
@@ -71,21 +68,21 @@ def make_gpu_cmd(credentials, njobs=1):
 sudo nvidia-smi -pm ENABLED -i 0
 sudo nvidia-smi -ac 2505,875 -i 0
 
-for i in $(seq %d); do
-    sudo nvidia-docker run -d \
-        -e QNAS_HOST=%s \
-        -e QNAS_PORT=%s \
-        -e QNAS_PASSWORD=%s \
-        qnas /root/projects/qnas/docker/run-worker.sh
-done
+# for i in $(seq %d); do
+#     sudo nvidia-docker run -d \
+#         -e QNAS_HOST=%s \
+#         -e QNAS_PORT=%s \
+#         -e QNAS_PASSWORD=%s \
+#         qnas /root/projects/qnas/docker/run-worker.sh
+# done
 
-while true; do
-    if [ $(sudo docker ps | wc -l) -eq 1 ]; then
-        echo "no docker containers -- halting!"
-        sudo halt
-    fi
-    sleep 5
-done
+# while true; do
+#     if [ $(sudo docker ps | wc -l) -eq 1 ]; then
+#         echo "no docker containers -- halting!"
+#         sudo halt
+#     fi
+#     sleep 5
+# done
 
     """ % (
         njobs,
