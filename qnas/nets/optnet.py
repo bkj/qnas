@@ -6,6 +6,8 @@
     Wrapper around TwoLayerNet that allows for custom optimizer
 """
 
+import sys
+
 sys.path.append('..')
 from two_layer_net import TwoLayerNet
 from optimizer import ConfigurableOptimizer

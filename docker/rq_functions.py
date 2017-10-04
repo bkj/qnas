@@ -9,7 +9,7 @@ import sys
 import time
 
 sys.path.append('../qnas')
-from qnas_trainer import QNASTrainer
+from trainer import QNASTrainer
 from controllers.dummy import DummyController
 from controllers.optimizer_search import RandomOptimizerController
 
@@ -32,13 +32,16 @@ def qnas_trainer_(config, **kwargs):
     return qtrainer.config, results
 
 # --
-# Dict for RQMaster
+# Register possible functions that the workers can run
 
 RQFunctions = {
     'run_dummy' : run_dummy,
     'kill' : kill,
     'qnas_trainer' : qnas_trainer_,
 }
+
+# --
+# Register possible controllers
 
 QNASControllers = {
     "DummyController" : DummyController,

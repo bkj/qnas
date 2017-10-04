@@ -1,8 +1,7 @@
+#!/usr/bin/env python
 
 """
-    nas.py
-    
-    Models for NAS
+    rnet.py
 """
 
 import sys

@@ -7,6 +7,7 @@
 import os
 import sys
 import time
+import atexit
 import argparse
 from rq import Queue
 from redis import Redis
@@ -38,13 +39,25 @@ class RQMaster(object):
     def __init__(self, **kwargs):
         
         self.jobs = deque()
-        self.q = Queue(connection=Redis(host=kwargs['redis_host'], port=kwargs['redis_port'], password=kwargs['redis_password']))
-        self.q.empty()
+        
+        connection = Redis(
+            host=kwargs['redis_host'],
+            port=kwargs['redis_port'],
+            password=kwargs['redis_password']
+        )
+        
+        self.job_queue = Queue('jobs', connection=connection)
+        self.kill_queue = Queue('kill', connection=connection)
+        self.empty()
         
         self.ttl = kwargs['ttl']
         self.result_ttl = kwargs['result_ttl']
         self.timeout = kwargs['timeout']
         self.fail_counter = 0
+    
+    def empty(self):
+        _ = self.job_queue.empty()
+        _ = self.kill_queue.empty()
     
     def add_job(self, jobspec, sleep_interval=None):
         func = RQFunctions.get(jobspec['func'])
@@ -55,7 +68,7 @@ class RQMaster(object):
             "result_ttl" : self.result_ttl,
             "timeout" : self.timeout,
         })
-        self.jobs.append(self.q.enqueue(func, **jobspec))
+        self.jobs.append(self.job_queue.enqueue(func, **jobspec))
         if sleep_interval:
             time.sleep(sleep_interval)
     
@@ -81,7 +94,7 @@ class RQMaster(object):
     
     def kill_workers(self, n_workers=100):
         for _ in range(n_workers):
-            _ = self.q.enqueue(RQFunctions.get('kill'), ttl=self.ttl, timeout=60 * 60 * 12)
+            _ = self.kill_queue.enqueue(RQFunctions.get('kill'), ttl=self.ttl, timeout=60 * 60 * 12)
 
 
 
@@ -104,8 +117,12 @@ if __name__ == "__main__":
     master = RQMaster(**kwargs)
     
     if args.empty:
-        _ = master.q.empty()
+        _ = master.empty()
         os._exit(0)
+    
+    # Kill workers
+    if not args.keep_workers:
+        atexit.register(master.kill_workers)
     
     # Initialize controller
     controller = QNASControllers[args.controller]()
@@ -116,8 +133,3 @@ if __name__ == "__main__":
     
     # Run, possibly adding more jobs
     master.run_loop(controller.next)
-    
-    # Kill workers
-    if not args.keep_workers:
-        master.kill_workers()
-
