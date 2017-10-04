@@ -69,6 +69,9 @@ class BaseController(object):
                 print >> sys.stderr, 'fail_counter=%d' % self.fail_counter
             else:
                 self.jobs.append(job)
+            
+            time.sleep(1)
+            print len(self.jobs)
     
     def kill_workers(self, delay=1, n_workers=100):
         # !! Should add check that workers are actually dead

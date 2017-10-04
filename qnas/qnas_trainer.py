@@ -150,7 +150,7 @@ class QNASTrainer(object):
                     continue
                 else:
                     print >> sys.stderr, 'grid-point.py: train_loss is NaN -- too many failures -- exiting'
-                    os._exit(0)
+                    return self.hist
             
             # Eval on val + test datasets
             val_acc, val_loss = QNASTrainer._eval(self.net, self.ds['val_loader'], self.epoch,  mode='val')

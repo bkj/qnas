@@ -31,7 +31,6 @@ from optimizer import ConfigurableOptimizer
 class OptNetSmall(TwoLayerNet):
     def __init__(self, config, **kwargs):
         super(OptNetSmall, self).__init__(config, **kwargs)
-        
         self.opt = ConfigurableOptimizer(self.parameters(), config['opt_arch'])
         
     def train_step(self, data, targets, progress):

@@ -7,6 +7,7 @@
 import sys
 import json
 import random
+from uuid import uuid4
 from tqdm import tqdm
 from base import BaseController
 
@@ -29,7 +30,7 @@ optimizer_space = {
         ('const', 1),
         ('const', 2),
         
-        ('gaussian_noise', (0, 0.01)),
+        # ('gaussian_noise', (0, 0.01)), # !! Slow...
         
         # ('weight_power', -1), # !! What are these?  The weights themselves raised to some power?
         # ('weight_power', -2),
@@ -81,20 +82,26 @@ class OptimizerSampler(object):
 
 
 class RandomOptimizerController(BaseController, OptimizerSampler):
-    def initialize(self, n_jobs=5):
+    def __init__(self, args):
+        super(RandomOptimizerController, self).__init__(args)
+        
+        self.all_hist = []
+    
+    def initialize(self, depth=1, n_jobs=5):
         for i in tqdm(range(n_jobs)):
             self.enqueue(qnas_trainer_run, {
                 "config" : {
-                    "model_name"  : "opt-test-%d" % i,
+                    "model_name"  : "opt-test-%s" % str(uuid4()),
                     "net_class"   : 'OptNetSmall',
                     "dataset"     : 'CIFAR10',
                     "epochs"      : 1,
                     "lr_schedule" : 'constant',
-                    "lr_init"     : 0.01,
-                    "opt_arch"    : self.sample(),
+                    "lr_init"     : 0.1,
+                    "opt_arch"    : self.sample(depth=depth),
                 },
                 "cuda" : True,
                 "lr_fail_factor" : 0.1,
+                "dataset_num_workers" : 8
             })
     
     def callback(self, result):
@@ -106,3 +113,4 @@ class RandomOptimizerController(BaseController, OptimizerSampler):
                 "val_acc" : h['val_acc'],
                 "test_acc" : h['test_acc'],
             })
+        
