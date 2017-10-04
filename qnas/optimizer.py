@@ -189,6 +189,11 @@ class BinaryOperation(object):
 #   esp. type errors
 
 def parse_definition(definition):
+    
+    for k,v in definition.items():
+        if isinstance(v, str):
+            definition[k] = (v, None)
+    
     op1 = partial(getattr(Operands, definition['op1'][0]), params=definition['op1'][1])
     un1 = partial(getattr(UnaryOperation, definition['un1'][0]), params=definition['un1'][1])
     
@@ -225,7 +230,7 @@ class ConfigurableOptimizer(Optimizer):
                 grad = p.grad.data
                 state = self.state[p]
                 update, state = self.update_rule(grad, state)
-                p.data.add_(-group['lr'], update)
+                p.data.sub_(group['lr'], update)
         
         return loss
 
@@ -243,54 +248,54 @@ from worker import GridPointWorker
 configs = {
     'sgd' : {
         "op1" : ('grad_power', 1),
-        "un1" : ('identity', None),
+        "un1" : 'identity',
         
         "op2" : ('const', 1),
-        "un2" : ('identity', None),
+        "un2" : 'identity',
         
-        "bin" : ('mul', None)
+        "bin" : 'mul',
     },
     'powersign' : {
         'op1' : ('compound', {
             "op1" : ('grad_power', 1),
-            "un1" : ('sign', None),
+            "un1" : 'sign',
             
             "op2" : ('grad_expavg', (1, 0.9)),
-            "un2" : ('sign', None),
+            "un2" : 'sign',
             
-            "bin" : ('mul', None),
+            "bin" : 'mul',
         }),
-        'un1' : ('exp', None),
+        'un1' : 'exp',
         
         'op2' : ('grad_power', 1),
-        'un2' : ('identity', None),
+        'un2' : 'identity',
         
-        'bin' : ('mul', None),
+        'bin' : 'mul',
     },
     'addsign' : {
         'op1' : ('compound', {
             "op1" : ('compound', {
                 "op1" : ('grad_power', 1),
-                "un1" : ('sign', None),
+                "un1" : 'sign',
                 
                 "op2" : ('grad_expavg', (1, 0.9)),
-                "un2" : ('sign', None),
+                "un2" : 'sign',
                 
-                "bin" : ('mul', None),
+                "bin" : 'mul',
             }),
-            "un1" : ('identity', None),
+            "un1" : 'identity',
             
             "op2" : ('const', 1),
-            "un2" : ('identity', None),
+            "un2" : 'identity',
             
-            "bin" : ('add', None)
+            "bin" : 'add',
         }),
-        'un1' : ('identity', None),
+        'un1' : 'identity',
         
         'op2' : ('grad_power', 1),
-        'un2' : ('identity', None),
+        'un2' : 'identity',
         
-        'bin' : ('mul', None),
+        'bin' : 'mul',
     },
 }
 
@@ -298,7 +303,7 @@ ds = DataLoader(root='../data/', pin_memory=False, num_workers=2).CIFAR10()
 loader = ds['train_loader']
 
 net = TwoLayerNet().cuda()
-opt = ConfigurableOptimizer(net.parameters(), configs['addsign'])
+opt = ConfigurableOptimizer(net.parameters(), configs['powersign'])
 lr_scheduler = lambda x: 0.01
 
 epochs = 5
