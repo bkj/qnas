@@ -19,12 +19,12 @@ optimizer_space = {
         ('grad_power', 2),
         ('grad_power', 3),
         
-        ('grad_expavg', (1, 0.9)),
-        ('grad_expavg', (2, 0.999)),
-        ('grad_expavg', (3, 0.999)),
+        ('grad_expavg', (1, 0.9, 'placeholder')), # placeholder for stateful
+        ('grad_expavg', (2, 0.999, 'placeholder')), # placeholder for stateful
+        ('grad_expavg', (3, 0.999, 'placeholder')), # placeholder for stateful
         
         ('grad_sign', 1),
-        ('grad_expavg_sign', (1, 0.9)),
+        ('grad_expavg_sign', (1, 0.9, 'placeholder')), # placeholder for stateful
         
         ('const', 1),
         ('const', 2),
@@ -55,6 +55,7 @@ optimizer_space = {
     ],
     "bin" : [
         'add',
+        'avg',
         'sub',
         'mul',
         ('div', 1e-8),

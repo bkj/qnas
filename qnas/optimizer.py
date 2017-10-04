@@ -60,11 +60,13 @@ class Operands(object):
     
     @staticmethod
     def gaussian_noise(grad, state, params):
+        mn, sd = params
+        
         noise = torch.randn(grad.size())
         if grad.is_cuda:
             noise = noise.cuda()
         
-        return noise, state
+        return mn + sd * noise, state
     
     @staticmethod
     def compound(grad, state, params):
@@ -115,6 +117,10 @@ class BinaryOperation(object):
         return x + y
     
     @staticmethod
+    def avg(x, y, params):
+        return (x + y) / 2
+    
+    @staticmethod
     def sub(x, y, params):
         return x - y
     
@@ -144,7 +150,7 @@ def parse_arch(arch):
             arch[k] = (v, None)
         elif v[0] in Operands.stateful:
             # add unique ID if Operand is stateful (eg to avoid collisions)
-            arch[k] = (v[0], v[1] + (str(uuid4()),))
+            arch[k] = (v[0], v[1][:-1] + (str(uuid4()),))
     
     op1 = partial(getattr(Operands, arch['op1'][0]), params=arch['op1'][1])
     un1 = partial(getattr(UnaryOperation, arch['un1'][0]), params=arch['un1'][1])
