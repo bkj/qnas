@@ -58,12 +58,12 @@ optimizer_space = {
         'sub',
         'mul',
         ('div', 1e-8),
-        'exp',
-        'keep',
+        # 'exp',
+        'keep_left',
     ]
 }
 
-class RandomOptimizerController(BaseController):
+class OptimizerSampler(object):
     def sample(self, depth=0, seed=None):
         if seed:
             random.seed(123)
@@ -77,7 +77,9 @@ class RandomOptimizerController(BaseController):
             
             "bin" : random.choice(optimizer_space['bin'])
         }
-    
+
+
+class RandomOptimizerController(BaseController, OptimizerSampler):
     def initialize(self, n_jobs=5):
         for i in tqdm(range(n_jobs)):
             self.enqueue(qnas_trainer_run, {
@@ -88,25 +90,10 @@ class RandomOptimizerController(BaseController):
                     "epochs"      : 1,
                     "lr_schedule" : 'constant',
                     "lr_init"     : 0.01,
-                    "opt_arch"    : {
-                        'op1' : ('compound', {
-                            "op1" : ('grad_power', 1),
-                            "un1" : 'sign',
-                            
-                            "op2" : ('grad_expavg', (1, 0.9)),
-                            "un2" : 'sign',
-                            
-                            "bin" : 'mul',
-                        }),
-                        'un1' : 'exp',
-                        
-                        'op2' : ('grad_power', 1),
-                        'un2' : 'identity',
-                        
-                        'bin' : 'mul',
-                    }
+                    "opt_arch"    : self.sample(),
                 },
                 "cuda" : True,
+                "lr_fail_factor" : 0.1,
             })
     
     def callback(self, result):
@@ -118,6 +105,3 @@ class RandomOptimizerController(BaseController):
                 "val_acc" : h['val_acc'],
                 "test_acc" : h['test_acc'],
             })
-
-
-

@@ -10,7 +10,7 @@ import argparse
 
 sys.path.append('../qnas')
 from controllers.base import DummyController
-from controllers.optimizer import RandomOptimizerController
+from controllers.optimizer_search import RandomOptimizerController
 
 # --
 # Args
