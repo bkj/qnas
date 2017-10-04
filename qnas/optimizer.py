@@ -9,12 +9,18 @@
 from functools import partial
 
 import torch
+from uuid import uuid4
 from torch.autograd import Variable
 from torch.nn import functional as F
 from torch.optim.optimizer import Optimizer
 
 
 class Operands(object):
+    
+    stateful = set([
+        'grad_expavg',
+        'grad_expavg_sign',
+    ])
     
     @staticmethod
     def grad_power(grad, state, params):
@@ -23,14 +29,11 @@ class Operands(object):
     
     @staticmethod
     def grad_expavg(grad, state, params):
-        """
-            !! If two legs of the optimizer use this, it'll get messed up
-        """
-        power, beta = params
-        k = 'grad_expavg_%d' % power
+        power, beta, mid = params
+        k = 'grad_expavg_%s' % mid
         
         if k not in state:
-            state[k] = grad.clone()
+            state[k] = (grad ** power).clone()
         else:
             state[k].mul_(beta).add_((1 - beta) * grad ** power)
         
@@ -65,8 +68,7 @@ class Operands(object):
     
     @staticmethod
     def compound(grad, state, params):
-        f = parse_arch(params)
-        return f(grad, state)
+        return parse_arch(params)(grad, state)
 
 
 class UnaryOperation(object):
@@ -135,12 +137,14 @@ class BinaryOperation(object):
         return x
 
 
-
 def parse_arch(arch):
     
     for k,v in arch.items():
         if isinstance(v, str):
             arch[k] = (v, None)
+        elif v[0] in Operands.stateful:
+            # add unique ID if Operand is stateful (eg to avoid collisions)
+            arch[k] = (v[0], v[1] + (str(uuid4()),))
     
     op1 = partial(getattr(Operands, arch['op1'][0]), params=arch['op1'][1])
     un1 = partial(getattr(UnaryOperation, arch['un1'][0]), params=arch['un1'][1])
@@ -152,9 +156,7 @@ def parse_arch(arch):
     
     def f(grad, state):
         left, state = op1(grad, state)
-        # print type(un1(left))
         right, state = op2(grad, state)
-        # print type(un2(right))
         return bin_(un1(left), un2(right)), state
     
     return f
@@ -178,8 +180,7 @@ class ConfigurableOptimizer(Optimizer):
                     continue
                 
                 grad = p.grad.data
-                state = self.state[p]
-                update, state = self.update_rule(grad, state)
+                update, self.state[p] = self.update_rule(grad, self.state[p])
                 p.data.sub_(group['lr'], update)
         
         return loss

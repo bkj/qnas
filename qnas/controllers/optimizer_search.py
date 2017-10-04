@@ -69,7 +69,7 @@ class OptimizerSampler(object):
             random.seed(123)
         
         return {
-            "op1" : random.choice(optimizer_space['op']) if not depth else self.sample(depth - 1),
+            "op1" : random.choice(optimizer_space['op']) if not depth else ('compound', self.sample(depth - 1)),
             "un1" : random.choice(optimizer_space['un']),
             
             "op2" : random.choice(optimizer_space['op']),
