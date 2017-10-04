@@ -118,11 +118,11 @@ class RBlock(nn.Module):
 
 class RNet(nn.Module):
     """ Random convolutional model """
-    def __init__(self, op_keys, red_op_keys, block_sizes=(2, 1, 1, 1), init_channels=64, num_classes=10):
+    def __init__(self, config, block_sizes=(2, 1, 1, 1), init_channels=64, num_classes=10):
         super(RNet, self).__init__()
         
-        self.op_keys = op_keys
-        self.red_op_keys = red_op_keys
+        self.op_keys = config['op_keys']
+        self.red_op_keys = config['red_op_keys']
         
         self.block_sizes = block_sizes
         self.init_channels = init_channels

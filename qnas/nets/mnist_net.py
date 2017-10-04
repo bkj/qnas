@@ -14,7 +14,7 @@ from torch.autograd import Variable
 from torch.nn import functional as F
 
 class MNISTNet(nn.Module):
-    def __init__(self, input_shape=(28, 28)):
+    def __init__(self, config, num_classes=10, input_shape=(28, 28)):
         super(MNISTNet, self).__init__()
         
         self.conv = nn.Sequential(
@@ -30,7 +30,7 @@ class MNISTNet(nn.Module):
         self.fc1_size = np.prod(self.conv(tmp).size()[1:])
         
         self.fc1 = nn.Linear(self.fc1_size, 128)
-        self.fc2 = nn.Linear(128, 10)
+        self.fc2 = nn.Linear(128, num_classes)
     
     def forward(self, x):
         x = self.conv(x)

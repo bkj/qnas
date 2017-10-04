@@ -21,7 +21,7 @@ from torch.autograd import Variable
 from torch.nn import functional as F
 
 class TwoLayerNet(nn.Module):
-    def __init__(self, num_classes=10, input_channels=3, hidden_channels=32, input_shape=32):
+    def __init__(self, config, num_classes=10, input_channels=3, hidden_channels=32, input_shape=32):
         super(TwoLayerNet, self).__init__()
         
         self.conv = nn.Sequential(

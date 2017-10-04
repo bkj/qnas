@@ -24,10 +24,8 @@ from torch.autograd import Variable
 cudnn.benchmark = True
 
 sys.path.append('../qnas')
-sys.path.append('../qnas/nets')
 from lr import LRSchedule
 from data import DataLoader
-
 from nets.rnet import RNet
 from nets.mnist_net import MNISTNet
 from nets.two_layer_net import TwoLayerNet
@@ -35,23 +33,16 @@ from nets.two_layer_net import TwoLayerNet
 # --
 # Network constructor helpers
 
-class NetConstructors(object):
-    @staticmethod
-    def rnet(config, num_classes):
-        return RNet(config['op_keys'], config['red_op_keys'], num_classes=num_classes)
-    
-    @staticmethod
-    def mnist_net(config, num_classes):
-        return MNISTNet()
-    
-    @staticmethod
-    def two_layer_net(config, num_classes):
-        return TwoLayerNet(num_classes=num_classes)
+net_contructors = {
+    "RNet" : RNet,
+    "MNISTNet" : MNISTNet,
+    "TwoLayerNet" : TwoLayerNet,
+}
 
 # --
 # Training helpers
 
-class GridPointWorker(object):
+class QNASTrainer(object):
     
     def __init__(self, config, net_class='rnet', dataset='CIFAR10', epochs=20, 
         lr_schedule='linear', lr_init=0.1, lr_fail_factor=0.5, max_failures=3, 
@@ -89,7 +80,7 @@ class GridPointWorker(object):
             num_workers=dataset_num_workers), self.dataset)()
         
         # Network
-        self.net = getattr(NetConstructors, self.net_class)(self.config, self.ds['num_classes'])
+        self.net = net_contructors[self.net_class](self.config, self.ds['num_classes'])
         self.net = self.net.cuda() if self.cuda else self.net
         
         # LR scheduler
@@ -133,7 +124,7 @@ class GridPointWorker(object):
             gen.set_postfix(OrderedDict([('epoch', epoch), ('train_loss', curr_loss), ('train_acc', curr_acc)]))
         
         return curr_acc, curr_loss, history
-
+    
     @staticmethod
     def _eval(net, epoch, loader, mode='val'):
         _ = net.eval()
@@ -162,12 +153,11 @@ class GridPointWorker(object):
         
         return curr_acc, curr_loss
     
-    
     def run(self):
         while self.epoch < self.epochs:
             
             # Train for an epoch
-            train_acc, train_loss, train_history = GridPointWorker._train_epoch(
+            train_acc, train_loss, train_history = QNASTrainer._train_epoch(
                 net=self.net,
                 loader=self.ds['train_loader'],
                 opt=self.opt,
@@ -189,8 +179,8 @@ class GridPointWorker(object):
                     os._exit(0)
             
             # Eval on val + test datasets
-            val_acc, val_loss = GridPointWorker._eval(self.net, self.epoch, self.ds['val_loader'], mode='val')
-            test_acc, test_loss = GridPointWorker._eval(self.net, self.epoch, self.ds['test_loader'], mode='test')
+            val_acc, val_loss = QNASTrainer._eval(self.net, self.epoch, self.ds['val_loader'], mode='val')
+            test_acc, test_loss = QNASTrainer._eval(self.net, self.epoch, self.ds['test_loader'], mode='test')
             
             # Log performance
             self.hist.append({
@@ -221,7 +211,7 @@ class GridPointWorker(object):
 # RQ helpers
 
 def run_job(config, **kwargs):
-    gpworker = GridPointWorker(config, **kwargs)
+    gpworker = QNASTrainer(config, **kwargs)
     results = gpworker.run()
     gpworker.save()
     return gpworker.config, results
