@@ -8,7 +8,7 @@ import os
 from worker import *
 
 sys.path.append('../qnas')
-from controllers.base import *
+from controllers.base import DummyController
 
 # --
 # Args
@@ -34,7 +34,7 @@ def parse_args():
 if __name__ == "__main__":
     
     args = parse_args()
-    controller = SimpleController(args)
+    controller = DummyController(args)
     
     if args.empty:
         _ = controller.q.empty()

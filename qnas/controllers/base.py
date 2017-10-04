@@ -4,12 +4,30 @@
     controller/base.py
 """
 
+import os
 import sys
 import time
+import json
 from rq import Queue
 from redis import Redis
 from tqdm import tqdm
 from collections import deque
+
+# --
+# Helpers
+
+def kill(delay=1):
+    print >> sys.stderr, '!!! Kill Signal Received -- shutting down in %ds' % delay
+    time.sleep(delay)
+    os.kill(os.getppid(), 9)
+
+
+def run_dummy(config, **kwargs):
+    time.sleep(3)
+    return config, {"dummy" : True}
+
+# --
+# Controllers
 
 class BaseController(object):
     
@@ -48,15 +66,17 @@ class BaseController(object):
             else:
                 self.jobs.append(job)
     
-    def kill_workers(self, n_workers=100):
+    def kill_workers(self, delay=1, n_workers=100):
         # !! Should add check that workers are actually dead
         for _ in range(n_workers):
             _ = self.q.enqueue(kill, ttl=self.ttl, timeout=self.timeout)
 
+# --
+# Example
 
-class SimpleController(BaseController):
+class DummyController(BaseController):
     
-    def initialize(self, n_jobs=100):
+    def initialize(self, n_jobs=2):
         for i in tqdm(range(n_jobs)):
             self.enqueue(run_dummy, {
                 "config" : {"model_name" : "test-%d" % i},
@@ -67,15 +87,6 @@ class SimpleController(BaseController):
             })
     
     def callback(self, result):
-        """ 
-            action to take when results are returned 
-            ... eg, most interesting things are going to enqueue more jobs ...
-        """
         config, hist = result
         print >> sys.stderr, 'job finished: %s' % json.dumps(config)
-        
-        # result_path = os.path.join('results', args.run, config['model_name'])
-        # if not os.path.exists(os.path.dirname(result_path)):
-        #     os.makedirs(os.path.dirname(result_path))
-        
-        # open(result_path, 'w').write('\n'.join(map(json.dumps, result)))
+    

@@ -49,7 +49,7 @@ class QNASTrainer(object):
         cuda=True, dataset_num_workers=2):
     
         self.config = config
-        self.config['vars'] = {
+        self.config.update({
             "net_class"      : net_class,
             "dataset"        : dataset,
             "epochs"         : epochs,
@@ -57,7 +57,7 @@ class QNASTrainer(object):
             "lr_init"        : lr_init,
             "lr_fail_factor" : lr_fail_factor,
             "max_failures"   : max_failures,
-        }
+        })
         
         self.net_class      = net_class
         self.dataset        = dataset
@@ -153,7 +153,7 @@ class QNASTrainer(object):
         
         return curr_acc, curr_loss
     
-    def run(self):
+    def _train(self):
         while self.epoch < self.epochs:
             
             # Train for an epoch
@@ -206,24 +206,10 @@ class QNASTrainer(object):
     
     def save(self):
         torch.save(self.net.state_dict(), self.config['model_name'])
-
-# --
-# RQ helpers
-
-def run_job(config, **kwargs):
-    gpworker = QNASTrainer(config, **kwargs)
-    results = gpworker.run()
-    gpworker.save()
-    return gpworker.config, results
-
-
-def run_dummy(config, **kwargs):
-    time.sleep(3)
-    return config, {"dummy" : True}
-
-
-def kill(delay=1):
-    print >> sys.stderr, '!!! Kill Signal Received -- shutting down in %ds' % delay
-    time.sleep(delay)
-    os.kill(os.getppid(), 9)
-
+    
+    @staticmethod
+    def run(config, **kwargs):
+        qnas_trainer = QNASTrainer(config, **kwargs)
+        results = qnas_trainer._train()
+        qnas_trainer.save()
+        return qnas_trainer.config, results
