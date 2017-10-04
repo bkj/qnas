@@ -62,15 +62,15 @@ class QNASTrainer(object):
         self.net_class      = net_class
         self.dataset        = dataset
         self.epochs         = epochs
-        self.lr_schedule    = lr_schedule
-        self.lr_init        = lr_init
         self.lr_fail_factor = lr_fail_factor
         self.max_failures   = max_failures
         self.cuda           = cuda
         
         self.fail_counter = 0
         self.hist = []
-    
+        
+        self._reset_network()
+        
     def _reset_network(self):
         # Reset epoch count
         self.epoch = 0
@@ -82,29 +82,20 @@ class QNASTrainer(object):
         # Network
         self.net = net_contructors[self.net_class](self.config, self.ds['num_classes'])
         self.net = self.net.cuda() if self.cuda else self.net
-        
-        # LR scheduler
-        self.lr_scheduler = functools.partial(getattr(LRSchedule, self.lr_schedule), 
-            lr_init=self.lr_init, epochs=self.epochs)
-        
-        # Optimizer -- need to allow configuration
-        self.opt = torch.optim.SGD(self.net.parameters(), lr=self.lr_scheduler(float(self.epoch)), 
-            momentum=0.9, weight_decay=5e-4)
     
     @staticmethod
-    def _train_epoch(net, loader, opt, epoch, lr_scheduler, n_train_batches):
+    def _train_epoch(net, loader, epoch, n_train_batches):
         _ = net.train()
         all_loss, correct, total = 0, 0, 0
         history = []
         gen = tqdm(enumerate(loader), total=len(loader))
         for batch_idx, (data, targets) in gen:
-            LRSchedule.set_lr(opt, lr_scheduler(epoch + batch_idx / n_train_batches))
-            
             if next(net.parameters()).is_cuda:
                 data, targets = data.cuda(), targets.cuda()
             
             data, targets = Variable(data), Variable(targets)
-            outputs, loss = net.train_step(data, targets, opt)
+            
+            outputs, loss = net.train_step(data, targets, progress=epoch + batch_idx / n_train_batches)
             
             if np.isnan(loss):
                 return np.nan, np.nan, []
@@ -160,9 +151,7 @@ class QNASTrainer(object):
             train_acc, train_loss, train_history = QNASTrainer._train_epoch(
                 net=self.net,
                 loader=self.ds['train_loader'],
-                opt=self.opt,
                 epoch=self.epoch,
-                lr_scheduler=self.lr_scheduler,
                 n_train_batches=self.ds['n_train_batches'],
             )
             
@@ -171,7 +160,7 @@ class QNASTrainer(object):
                 self.fail_counter += 1
                 if self.fail_counter <= self.max_failures:
                     print >> sys.stderr, 'grid-point.py: train_loss is NaN -- reducing LR and restarting'
-                    self.lr_init *= self.lr_fail_factor
+                    self.config['lr_init'] *= self.lr_fail_factor
                     self._reset_network()
                     continue
                 else:
@@ -185,7 +174,7 @@ class QNASTrainer(object):
             # Log performance
             self.hist.append({
                 'epoch'              : self.epoch, 
-                'lr'                 : self.lr_scheduler(self.epoch + 1),
+                'lr'                 : self.net.lr,
                 'timestamp'          : datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
                 
                 'train_acc'          : train_acc, 

@@ -150,6 +150,15 @@ class RNet(nn.Module):
         self.normal4 = self._make_normal(init_channels * 2 ** 3, block_sizes[3])
         
         self.linear = nn.Linear(init_channels * 2 ** 3, num_classes)
+        
+        # Optimizer
+        self.lr_scheduler = functools.partial(getattr(LRSchedule, config['lr_schedule']), 
+            lr_init=config['lr_init'], epochs=config['epochs'])
+        
+        self.lr = self.lr_scheduler(0.0)
+        
+        self.opt = torch.optim.SGD(self.parameters(), lr=self.lr, 
+            momentum=0.9, weight_decay=5e-4)
     
     def _make_normal(self, channels, block_size):
         tmp = []
@@ -181,12 +190,15 @@ class RNet(nn.Module):
         out = out.view(out.size(0), -1)
         return self.linear(out)
     
-    def train_step(self, data, targets, optimizer):
-        optimizer.zero_grad()
+    def train_step(self, data, targets, progress):
+        self.lr = self.lr_scheduler(progress)
+        LRSchedule.set_lr(self.opt, self.lr)
+        
+        self.opt.zero_grad()
         outputs = self(data)
         loss = F.cross_entropy(outputs, targets)
         loss.backward()
-        optimizer.step()
+        self.opt.step()
         return outputs, loss.data[0]
 
 

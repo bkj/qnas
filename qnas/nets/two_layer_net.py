@@ -34,6 +34,15 @@ class TwoLayerNet(nn.Module):
         )
         
         self.fc = nn.Linear(hidden_channels * (input_shape - 4) ** 2, num_classes)
+        
+        # Optimizer
+        self.lr_scheduler = functools.partial(getattr(LRSchedule, config['lr_schedule']), 
+            lr_init=config['lr_init'], epochs=config['epochs'])
+        
+        self.lr = self.lr_scheduler(0.0)
+        
+        self.opt = torch.optim.SGD(self.parameters(), lr=self.lr, 
+            momentum=0.9, weight_decay=5e-4)
     
     def forward(self, x):
         x = self.conv(x)
@@ -41,13 +50,17 @@ class TwoLayerNet(nn.Module):
         x = self.fc(x)
         return x
         
-    def train_step(self, data, targets, opt):
-        opt.zero_grad()
+    def train_step(self, data, targets, progress):
+        self.lr = self.lr_scheduler(progress)
+        LRSchedule.set_lr(self.opt, self.lr)
+        
+        self.opt.zero_grad()
         outputs = self(data)
         loss = F.cross_entropy(outputs, targets)
         loss.backward()
-        opt.step()
+        self.opt.step()
         return outputs, loss.data[0]
+
 
 if __name__ == "__main__":
     net = TwoLayerNet()
