@@ -82,7 +82,7 @@ class RandomOptimizerSampler(object):
 
 
 class RandomOptimizerController(object):
-    def __init__(self, depth=1, **kwargs):
+    def __init__(self, depth=0, **kwargs):
         self.configs_dir = os.path.join(kwargs['outdir'], kwargs['run_name'], 'configs')
         if not os.path.exists(self.configs_dir):
             os.makedirs(self.configs_dir)
