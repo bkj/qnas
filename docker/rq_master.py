@@ -53,7 +53,8 @@ class RQMaster(object):
         self.ttl = kwargs['ttl']
         self.result_ttl = kwargs['result_ttl']
         self.timeout = kwargs['timeout']
-        self.fail_counter = 0
+        self.n_failures = 0
+        self.n_success = 0
     
     def empty(self):
         _ = self.job_queue.empty()
@@ -72,7 +73,8 @@ class RQMaster(object):
         if sleep_interval:
             time.sleep(sleep_interval)
     
-    def run_loop(self, callback):
+    def run_loop(self, success_callback, failure_callback):
+        counter = 0
         while True:
             if len(self.jobs) == 0:
                 return
@@ -80,19 +82,27 @@ class RQMaster(object):
             job = self.jobs.popleft()
             
             if job.is_finished:
-                next_jobspec = callback(job.result)
+                self.n_success += 1
+                print >> sys.stderr, 'n_success=%d' % self.n_success
+                next_jobspec = success_callback(job.result)
                 if next_jobspec:
                     self.add_job(next_jobspec)
             elif job.is_failed:
-                self.fail_counter += 1
-                print >> sys.stderr, 'fail_counter=%d' % self.fail_counter
+                self.n_failures += 1
+                print >> sys.stderr, 'n_failures=%d' % self.n_failures
+                next_jobspec = failure_callback(job.result)
+                if next_jobspec:
+                    self.add_job(next_jobspec)
             else:
                 self.jobs.append(job)
             
-            time.sleep(1)
-            print "%d jobs | %s" % (len(self.jobs), datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            counter += 1
+            if not counter % 100:
+                time.sleep(1)
+                print "%d jobs | %s" % (len(self.jobs), datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     
     def kill_workers(self, n_workers=100):
+        print >> sys.stderr, '!! killing workers'
         for _ in range(n_workers):
             _ = self.kill_queue.enqueue(RQFunctions.get('kill'), ttl=self.ttl, timeout=60 * 60 * 12)
 
@@ -129,7 +139,7 @@ if __name__ == "__main__":
     
     # Add initial jobs
     for _ in range(args.initial_jobs):
-        master.add_job(controller.next())
+        master.add_job(controller.seed())
     
     # Run, possibly adding more jobs
-    master.run_loop(controller.next)
+    master.run_loop(controller.success, controller.failure)
