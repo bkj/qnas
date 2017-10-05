@@ -137,13 +137,13 @@ class PPOOptimizerSampler(object):
         self.depth = 0
     
     def update(self, arch, reward):
-        
+        pass
         # --
         # Update model
         # self.net.update(arch, reward)
         
     def sample(self):
-        
+        pass
         # --
         # Sample from policy
         # return self.net.sample()
