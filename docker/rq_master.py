@@ -29,6 +29,10 @@ from rq_functions import RQFunctions, QNASControllers
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    
+    parser.add_argument('--run-name', type=str, required=True)
+    parser.add_argument('--outdir', type=str, default='results')
+    
     parser.add_argument('--initial-jobs', type=int, default=1)
     parser.add_argument('--controller', type=str, default='DummyController')
     
@@ -144,7 +148,10 @@ if __name__ == "__main__":
         atexit.register(master.kill_workers)
     
     # Initialize controller
-    controller = QNASControllers[args.controller]()
+    controller = QNASControllers[args.controller](**{
+        "outdir" : args.outdir,
+        "run_name" : args.run_name,
+    })
     
     # Add initial jobs
     for _ in range(args.initial_jobs):

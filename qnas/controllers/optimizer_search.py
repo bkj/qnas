@@ -6,6 +6,7 @@
 
 from __future__ import print_function
 
+import os
 import sys
 import json
 import random
@@ -79,15 +80,25 @@ class OptimizerSampler(object):
 
 
 class RandomOptimizerController(object):
-    def __init__(self, depth=1):
+    def __init__(self, depth=1, **kwargs):
         self.depth = depth
         self.sampler = OptimizerSampler()
+        
+        self.run_name = kwargs['run_name']
+        
+        self.configs_dir = os.path.join(kwargs['outdir'], self.run_name, 'configs')
+        if not os.path.exists(self.configs_dir):
+            os.makedirs(self.configs_dir)
+            
+        self.hists_dir = os.path.join(kwargs['outdir'], self.run_name, 'hists')
+        if not os.path.exists(self.hists_dir):
+            os.makedirs(self.hists_dir)
     
     def _next(self, last=None):
         return {
             "func" : "qnas_trainer",
             "config" : {
-                "model_name"  : "opt-test2-%s" % str(uuid4()),
+                "model_name"  : "%s-%s" % (args.run_name, str(uuid4())),
                 "net_class"   : 'OptNetSmall',
                 "dataset"     : 'CIFAR10',
                 "epochs"      : 1,
@@ -106,8 +117,11 @@ class RandomOptimizerController(object):
     def success(self, last):
         config, hist = last
         print('job finished: %s' % json.dumps(config), file=sys.stderr)
-        open('./results/hists/%s' % config['model_name'], 'w').write('\n'.join(map(json.dumps, hist)))
-        open('./results/configs/%s' % config['model_name'], 'w').write(json.dumps(config))
+        
+        # Save results
+        open(os.path.join(self.configs_dir, config['model_name']), 'w').write(json.dumps(config))
+        open(os.path.join(self.hists_dir, config['model_name']), 'w').write('\n'.join(map(json.dumps, hist)))
+        
         return self._next()
     
     def failure(self, last):
