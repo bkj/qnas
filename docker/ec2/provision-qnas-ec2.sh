@@ -42,7 +42,6 @@ sudo add-apt-repository \
    stable"
 
 sudo apt-get update
-
 sudo apt-get install -y docker-ce
 
 # --
@@ -51,15 +50,12 @@ sudo apt-get install -y docker-ce
 wget -P /tmp https://github.com/NVIDIA/nvidia-docker/releases/download/v1.0.1/nvidia-docker_1.0.1-1_amd64.deb
 sudo dpkg -i /tmp/nvidia-docker*.deb && rm /tmp/nvidia-docker*.deb
 
-# Test
-sudo nvidia-docker run --rm nvidia/cuda nvidia-smi
-
 # --
 # Fetch qnas
 
 mkdir -p projects
 cd projects
-git clone https://github.com/bkj/qnas
+git clone https://github.com/bkj/qnas -b python3
 cd qnas/docker
-sudo docker build -t qnas .
+sudo docker build -t qnas3 .
 
