@@ -8,11 +8,11 @@ import sys
 sys.path.append('../qnas')
 from data import DataLoader
 from helpers import to_numpy
-from qnas_trainer import QNASTrainer
+from trainer import QNASTrainer
 from nets.optnet import OptNetSmall
 from optimizer import ConfigurableOptimizer
 
-from controllers.optimizer import OptimizerSampler
+from controllers.optimizer_search import OptimizerSampler
 
 # --
 # Define optimizers
@@ -32,7 +32,7 @@ archs = {
             "op1" : ('grad_power', 1),
             "un1" : 'sign',
             
-            "op2" : ('grad_expavg', (1, 0.9)),
+            "op2" : ('grad_expavg', (1, 0.9, '*')),
             "un2" : 'sign',
             
             "bin" : 'mul',
@@ -50,7 +50,7 @@ archs = {
                 "op1" : ('grad_power', 1),
                 "un1" : 'sign',
                 
-                "op2" : ('grad_expavg', (1, 0.9)),
+                "op2" : ('grad_expavg', (1, 0.9, '*')),
                 "un2" : 'sign',
                 
                 "bin" : 'mul',
@@ -84,11 +84,11 @@ for _ in range(3):
     _ = Operands.grad_power(grad, state, 1)
     _ = Operands.grad_power(grad, state, 2)
     _ = Operands.grad_power(grad, state, 3)
-    _ = Operands.grad_expavg(grad, state, (1, 0.9))
-    _ = Operands.grad_expavg(grad, state, (2, 0.999))
-    _ = Operands.grad_expavg(grad, state, (3, 0.999))
+    _ = Operands.grad_expavg(grad, state, (1, 0.9, 'placeholder'))
+    _ = Operands.grad_expavg(grad, state, (2, 0.999, 'placeholder'))
+    _ = Operands.grad_expavg(grad, state, (3, 0.999, 'placeholder'))
     _ = Operands.const(grad, state, 1)
-    _ = Operands.gaussian_noise(grad, state, None)
+    _ = Operands.gaussian_noise(grad, state, (0, 1))
 
 # Unary operations
 grad = torch.randn((10, 10))
@@ -113,29 +113,23 @@ _ = BinaryOperation.keep_left(grad_a, grad_b, None)
 # --
 # Run
 
-for _ in range(20):
-    try:
-        arch = OptimizerSampler().sample()
-        print arch
-        
-        ds = DataLoader(root='../data/', pin_memory=False, num_workers=2).CIFAR10()
-        
-        net = OptNetSmall({
-            "lr_schedule" : 'constant',
-            "epochs" : 1,
-            "lr_init" : 0.01,
-            "opt_arch" : arch
-        }).cuda()
-        
-        epochs = 1
-        for epoch in range(epochs):
-            print 'epoch=%d' % epoch
-            curr_acc, curr_loss, history = QNASTrainer._train_epoch(net, ds['train_loader'], epoch, ds['n_train_batches'])
-            val_acc, val_loss = QNASTrainer._eval(net, ds['val_loader'], epoch, mode='val')
-            print val_acc
-            print
-    except:
-        print 'error!'
+arch = archs['powersign']
+
+ds = DataLoader(root='../data/', pin_memory=False, num_workers=2).CIFAR10()
+
+net = OptNetSmall({
+    "lr_schedule" : 'constant',
+    "epochs" : 1,
+    "lr_init" : 0.01,
+    "opt_arch" : arch
+}).cuda()
+
+epoch = 0
+print 'epoch=%d' % epoch
+curr_acc, curr_loss, history = QNASTrainer._train_epoch(net, ds['train_loader'], epoch, ds['n_train_batches'])
+val_acc, val_loss = QNASTrainer._eval(net, ds['val_loader'], epoch, mode='val')
+print val_acc
+print
 
 
 arch = {'bin': 'keep', 'un1': 'exp', 'un2': ('drop', 0.1), 'op1': ('grad_expavg', (3, 0.999)), 'op2': ('grad_sign', 1)}
