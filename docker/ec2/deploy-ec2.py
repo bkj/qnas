@@ -41,7 +41,7 @@ for i in $(seq %d); do
         -e QNAS_HOST=%s \
         -e QNAS_PORT=%s \
         -e QNAS_PASSWORD=%s \
-        qnas /root/projects/qnas/docker/run-worker.sh
+        qnas3 /root/projects/qnas/docker/run-worker.sh
 done
 
 while true; do
@@ -73,7 +73,7 @@ for i in $(seq %d); do
         -e QNAS_HOST=%s \
         -e QNAS_PORT=%s \
         -e QNAS_PASSWORD=%s \
-        qnas /root/projects/qnas/docker/run-worker.sh
+        qnas3 /root/projects/qnas/docker/run-worker.sh
 done
 
 while true; do
