@@ -7,6 +7,12 @@
 from __future__ import print_function
 
 import os
+import sys
+
+if sys.version_info.major < 3:
+    raise Exception('sys.version_info.major < 3')
+    os._exit(1)
+
 import time
 
 from qnas.trainer import QNASTrainer
