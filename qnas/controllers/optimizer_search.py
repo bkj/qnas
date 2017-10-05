@@ -77,7 +77,7 @@ class OptimizerSampler(object):
 
 
 class RandomOptimizerController(object):
-    def __init__(self, depth=0):
+    def __init__(self, depth=1):
         self.depth = depth
         self.sampler = OptimizerSampler()
     
@@ -91,20 +91,23 @@ class RandomOptimizerController(object):
                     "dataset"     : 'CIFAR10',
                     "epochs"      : 1,
                     "lr_schedule" : 'constant',
-                    "lr_init"     : 0.1,
+                    "lr_init"     : 0.01,
                     "opt_arch"    : self.sampler.sample(depth=self.depth),
+                    # "opt_arch" : {
+                    #     "op1" : ('grad_power', 1),
+                    #     "un1" : 'identity',
+                        
+                    #     "op2" : ('const', 1),
+                    #     "un2" : 'identity',
+                        
+                    #     "bin" : 'mul',
+                    # }
                 },
                 "cuda" : True,
-                "lr_fail_factor" : 0.1,
+                "lr_fail_factor" : 0.5,
                 "dataset_num_workers" : 8
             }
         else:
             config, hist = last
             print >> sys.stderr, 'job finished: %s' % json.dumps(config)
-            for h in hist:
-                print json.dumps({
-                    "train_acc" : h['train_acc'], 
-                    "val_acc" : h['val_acc'],
-                    "test_acc" : h['test_acc'],
-                })
-            
+            json.dump(open('./results/%s' % config['model_name'], 'w'), hist)

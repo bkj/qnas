@@ -28,7 +28,7 @@ def run_dummy(config, **kwargs):
 def qnas_trainer_(config, **kwargs):
     qtrainer = QNASTrainer(config, **kwargs)
     results = qtrainer._train()
-    qtrainer.save()
+    # qtrainer.save()
     return qtrainer.config, results
 
 # --
