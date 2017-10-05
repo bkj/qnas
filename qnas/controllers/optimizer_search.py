@@ -81,33 +81,41 @@ class RandomOptimizerController(object):
         self.depth = depth
         self.sampler = OptimizerSampler()
     
-    def next(self, last=None):
-        if not last:
-            return {
-                "func" : "qnas_trainer",
-                "config" : {
-                    "model_name"  : "opt-test-%s" % str(uuid4()),
-                    "net_class"   : 'OptNetSmall',
-                    "dataset"     : 'CIFAR10',
-                    "epochs"      : 1,
-                    "lr_schedule" : 'constant',
-                    "lr_init"     : 0.01,
-                    "opt_arch"    : self.sampler.sample(depth=self.depth),
-                    # "opt_arch" : {
-                    #     "op1" : ('grad_power', 1),
-                    #     "un1" : 'identity',
-                        
-                    #     "op2" : ('const', 1),
-                    #     "un2" : 'identity',
-                        
-                    #     "bin" : 'mul',
-                    # }
-                },
-                "cuda" : True,
-                "lr_fail_factor" : 0.5,
-                "dataset_num_workers" : 8
-            }
-        else:
-            config, hist = last
-            print >> sys.stderr, 'job finished: %s' % json.dumps(config)
-            json.dump(open('./results/%s' % config['model_name'], 'w'), hist)
+    def _next(self, last=None):
+        return {
+            "func" : "qnas_trainer",
+            "config" : {
+                "model_name"  : "opt-test-%s" % str(uuid4()),
+                "net_class"   : 'OptNetSmall',
+                "dataset"     : 'CIFAR10',
+                "epochs"      : 1,
+                "lr_schedule" : 'constant',
+                "lr_init"     : 0.01,
+                "opt_arch"    : self.sampler.sample(depth=self.depth),
+                # "opt_arch" : {
+                #     "op1" : ('grad_power', 1),
+                #     "un1" : 'identity',
+                    
+                #     "op2" : ('const', 1),
+                #     "un2" : 'identity',
+                    
+                #     "bin" : 'mul',
+                # }
+            },
+            "cuda" : True,
+            "lr_fail_factor" : 0.5,
+            "dataset_num_workers" : 8
+        }
+    
+    def seed(self):
+        return self._next()
+    
+    def success(self, last):
+        config, hist = last
+        print >> sys.stderr, 'job finished: %s' % json.dumps(config)
+        open('./results/%s' % config['model_name'], 'w').write('\n'.join(map(json.dumps, hist)))
+        return self._next()
+    
+    def failure(self, last):
+        print >> sys.stderr, 'job failed!'
+        return self._next()
