@@ -38,7 +38,7 @@ def qnas_trainer_(config, **kwargs):
     return qtrainer.config, results
 
 # --
-# Register possible functions that the workers can run
+# Register possible functions for `rqworkers` to run
 
 RQFunctions = {
     'run_dummy' : run_dummy,
@@ -47,7 +47,7 @@ RQFunctions = {
 }
 
 # --
-# Register possible controllers
+# Register possible controllers for `rq_master.py` to run
 
 QNASControllers = {
     "DummyController" : DummyController,
