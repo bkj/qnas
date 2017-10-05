@@ -29,7 +29,7 @@ RUN pip install redis rq
 # Download qnas + datasets
 RUN mkdir -p /root/projects/
 WORKDIR /root/projects
-RUN git clone https://github.com/bkj/qnas
+RUN git clone https://github.com/bkj/qnas -b python3
 WORKDIR /root/projects/qnas/
 RUN ./utils/download.sh
 
