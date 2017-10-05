@@ -15,8 +15,7 @@ from torch import nn
 from torch.autograd import Variable
 from torch.nn import functional as F
 
-sys.path.append('..')
-from lr import LRSchedule
+from ..lr import LRSchedule
 
 class MNISTNet(nn.Module):
     def __init__(self, config, num_classes=10, input_shape=(28, 28)):

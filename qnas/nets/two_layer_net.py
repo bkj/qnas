@@ -22,8 +22,7 @@ from torch import nn
 from torch.autograd import Variable
 from torch.nn import functional as F
 
-sys.path.append('..')
-from lr import LRSchedule
+from ..lr import LRSchedule
 
 class TwoLayerNet(nn.Module):
     def __init__(self, config, num_classes=10, input_channels=3, hidden_channels=32, input_shape=32):
@@ -71,4 +70,4 @@ if __name__ == "__main__":
     net = TwoLayerNet()
     data = Variable(torch.zeros((128, 3, 32, 32)))
     z = net(data)
-    print z.size()
+    print(z.size(), file=sys.stderr)

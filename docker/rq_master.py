@@ -119,7 +119,7 @@ if __name__ == "__main__":
             'redis_password' : os.environ['QNAS_PASSWORD'],
         }
     except:
-        raise Exception("couldn't get credentials -- try `source ../credentials.sh`")
+        raise Exception("couldn't get credentials -- try `source credentials.sh`")
     
     args = parse_args()
     kwargs = vars(args)

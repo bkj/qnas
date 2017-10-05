@@ -5,13 +5,11 @@
 """
 
 import os
-import sys
 import time
 
-sys.path.append('../qnas')
-from trainer import QNASTrainer
-from controllers.dummy import DummyController
-from controllers.optimizer_search import RandomOptimizerController
+from qnas.trainer import QNASTrainer
+from qnas.controllers.dummy import DummyController
+from qnas.controllers.optimizer_search import RandomOptimizerController
 
 # --
 # Function definitions

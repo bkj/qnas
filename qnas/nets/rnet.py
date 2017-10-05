@@ -16,8 +16,7 @@ from torch import nn
 from torch.nn import functional as F
 from torch.autograd import Variable
 
-sys.path.append('..')
-from lr import LRSchedule
+from ..lr import LRSchedule
 
 class Identity(nn.Sequential):
     def forward(self, x):

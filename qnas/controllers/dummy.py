@@ -4,6 +4,7 @@
     controller/dummy.py
 """
 
+import sys
 import numpy as np
 
 class DummyController(object):
@@ -13,7 +14,7 @@ class DummyController(object):
     
     def success(self, last):
         config, hist = last
-        print config
+        print(config, file=sys.stderr)
     
     def failure(self, last):
         pass

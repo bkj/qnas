@@ -24,9 +24,9 @@ import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
 cudnn.benchmark = True
 
-from lr import LRSchedule
-from data import DataLoader
-from nets import net_constructors
+from .lr import LRSchedule
+from .data import DataLoader
+from .nets import net_constructors
 
 # --
 # Training helpers
