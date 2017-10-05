@@ -105,7 +105,7 @@ class RandomOptimizerController(object):
         config, hist = last
         print >> sys.stderr, 'job finished: %s' % json.dumps(config)
         open('./results/hists/%s' % config['model_name'], 'w').write('\n'.join(map(json.dumps, hist)))
-        open('./results/configs/%s' % config['model_name'], 'w').write('\n'.join(map(json.dumps, hist)))
+        open('./results/configs/%s' % config['model_name'], 'w').write(json.dumps(config))
         return self._next()
     
     def failure(self, last):

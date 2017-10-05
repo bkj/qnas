@@ -57,6 +57,7 @@ class RQMaster(object):
         self.n_success = 0
     
     def empty(self):
+        print >> sys.stderr, "RQMaster.empty: called"
         _ = self.job_queue.empty()
         _ = self.kill_queue.empty()
     
@@ -99,10 +100,10 @@ class RQMaster(object):
             counter += 1
             if not counter % 100:
                 time.sleep(1)
-                print "%d jobs | %s" % (len(self.jobs), datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                print "RQMaster.run_loop: %d jobs | %s" % (len(self.jobs), datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     
     def kill_workers(self, n_workers=100):
-        print >> sys.stderr, '!! killing workers'
+        print >> sys.stderr, "RQMaster.kill_workers: called"
         for _ in range(n_workers):
             _ = self.kill_queue.enqueue(RQFunctions.get('kill'), ttl=self.ttl, timeout=60 * 60 * 12)
 
