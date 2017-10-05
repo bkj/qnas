@@ -17,7 +17,7 @@ from controllers.optimizer_search import RandomOptimizerController
 # Function definitions
 
 def kill(delay=1):
-    print >> sys.stderr, '!!! Kill Signal Received -- shutting down in %ds' % delay
+    print('!!! Kill Signal Received -- shutting down in %ds' % delay, file=sys.stderr)
     time.sleep(delay)
     os.kill(os.getppid(), 9)
     

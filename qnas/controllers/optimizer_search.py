@@ -103,12 +103,12 @@ class RandomOptimizerController(object):
     
     def success(self, last):
         config, hist = last
-        print >> sys.stderr, 'job finished: %s' % json.dumps(config)
+        print('job finished: %s' % json.dumps(config), file=sys.stderr)
         open('./results/hists/%s' % config['model_name'], 'w').write('\n'.join(map(json.dumps, hist)))
         open('./results/configs/%s' % config['model_name'], 'w').write(json.dumps(config))
         return self._next()
     
     def failure(self, last):
-        print >> sys.stderr, 'job failed!'
+        print('job failed!', file=sys.stderr)
         return self._next()
 

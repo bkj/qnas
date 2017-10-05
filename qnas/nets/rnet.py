@@ -227,4 +227,4 @@ if __name__ == "__main__":
     op_keys = ('double_bnconv_3', 'identity', 'add')
     red_op_keys = ('double_bnconv_3', 'conv_1', 'add')
     net = RNet(op_keys, red_op_keys)
-    print >> sys.stderr, net
+    print(net, file=sys.stderr)

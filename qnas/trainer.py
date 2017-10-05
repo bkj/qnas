@@ -144,12 +144,12 @@ class QNASTrainer(object):
             if np.isnan(train_loss):
                 self.fail_counter += 1
                 if self.fail_counter <= self.max_failures:
-                    print >> sys.stderr, 'grid-point.py: train_loss is NaN -- reducing LR and restarting'
+                    print('grid-point.py: train_loss is NaN -- reducing LR and restarting', file=sys.stderr)
                     self.config['lr_init'] *= self.lr_fail_factor
                     self._setup()
                     continue
                 else:
-                    print >> sys.stderr, 'grid-point.py: train_loss is NaN -- too many failures -- exiting'
+                    print('grid-point.py: train_loss is NaN -- too many failures -- exiting', file=sys.stderr)
                     return self.hist
             
             # Eval on val + test datasets
@@ -174,7 +174,7 @@ class QNASTrainer(object):
             })
             
             self.epoch += 1
-            print
+            print('--')
         
         return self.hist
     
