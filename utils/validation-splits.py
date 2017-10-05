@@ -32,7 +32,7 @@ for name in glob('./data/*'):
     
     fs = map(lambda x: x.split('/')[-2:], glob(os.path.join(src, '*', '*')))
     
-    df = pd.DataFrame(fs)
+    df = pd.DataFrame(list(fs))
     df.columns = ('lab', 'fname')
     df['src'] = df.apply(lambda x: os.path.join(src, x['lab'], x['fname']), 1)
     df = df.sort_values('src')

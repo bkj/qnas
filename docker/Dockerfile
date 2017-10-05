@@ -27,6 +27,7 @@ RUN apt install -y redis-server
 RUN pip install redis rq
 
 # Download qnas + datasets
+RUN echo "checkpoint ... 0"
 RUN mkdir -p /root/projects/
 WORKDIR /root/projects
 RUN git clone https://github.com/bkj/qnas -b python3
