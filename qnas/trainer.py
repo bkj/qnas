@@ -57,7 +57,7 @@ class QNASTrainer(object):
         self.epoch = 0
         
         # Set dataset
-        self.ds = getattr(DataLoader(root='../data/', pin_memory=self.cuda, 
+        self.ds = getattr(DataLoader(root='../data/', pin_memory=False,
             num_workers=self.dataset_num_workers), self.dataset)()
         
         # Network
@@ -105,8 +105,7 @@ class QNASTrainer(object):
     def _eval(net, loader, epoch, mode='val'):
         _ = net.eval()
         all_loss, correct, total = 0, 0, 0
-        gen = tqdm(enumerate(loader), total=len(loader))
-        for batch_idx, (data, targets) in gen:
+        for batch_idx, (data, targets) in enumerate(loader):
             
             if next(net.parameters()).is_cuda:
                 data, targets = data.cuda(), targets.cuda()
@@ -126,7 +125,9 @@ class QNASTrainer(object):
                     
             curr_acc = correct / total
             curr_loss = all_loss / (batch_idx + 1)
-            gen.set_postfix(OrderedDict([('epoch', epoch), ('%s_loss' % mode, curr_loss), ('%s_acc' % mode, curr_acc)]))
+            
+            perf = OrderedDict([('epoch', epoch), ('%s_loss' % mode, curr_loss), ('%s_acc' % mode, curr_acc)])
+            print(json.dumps(perf))
         
         return curr_acc, curr_loss
     

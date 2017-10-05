@@ -116,7 +116,7 @@ class DataLoader(object):
         
         val_loader = torch.utils.data.DataLoader(
             datasets.ImageFolder(root=os.path.join(self.root, 'manual/%s/tv_val' % name), transform=transform_test), 
-            batch_size=256, 
+            batch_size=128, 
             shuffle=False, 
             num_workers=self.num_workers,
             pin_memory=self.pin_memory,
@@ -124,7 +124,7 @@ class DataLoader(object):
         
         test_loader = torch.utils.data.DataLoader(
             datasets.ImageFolder(root=os.path.join(self.root, 'manual/%s/test' % name), transform=transform_test), 
-            batch_size=256, 
+            batch_size=128, 
             shuffle=False, 
             num_workers=self.num_workers,
             pin_memory=self.pin_memory,
