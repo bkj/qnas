@@ -3,7 +3,7 @@
 """
     deploy-ec2.py
     
-    Deploy a Docker workers via EC2
+    Deploy QNAS3 Docker workers via EC2
 """
 
 import os
