@@ -127,12 +127,14 @@ class QNASTrainer(object):
             curr_acc = correct / total
             curr_loss = all_loss / (batch_idx + 1)
             
+            # !! Oddly, leaving this inside the loop appears to prevent the `torch` `Dataload` from freezing
+            # ... Should investigate further
             perf = OrderedDict([('epoch', epoch), ('%s_loss' % mode, curr_loss), ('%s_acc' % mode, curr_acc)])
             print(json.dumps(perf))
         
         return curr_acc, curr_loss
     
-    def _train(self):
+    def train(self):
         while self.epoch < self.epochs:
             
             # Train for an epoch
