@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
 """
-    controller/dummy.py
+    controllers/dummy.py
 """
+
+from __future__ import print_function
 
 import sys
 import numpy as np

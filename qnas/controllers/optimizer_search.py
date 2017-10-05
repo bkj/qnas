@@ -4,6 +4,8 @@
     controllers/optimizer_search.py
 """
 
+from __future__ import print_function
+
 import sys
 import json
 import random

@@ -8,6 +8,7 @@
         - That way, can use `ImageFolder` dataloader for all datasets, do manual validation splits, etc
 """
 
+from __future__ import print_function
 
 import os
 import sys
@@ -76,6 +77,6 @@ if __name__ == "__main__":
     args = parse_args()
     
     for name in list(set(args.datasets.split(','))):
-        print >> sys.stderr, 'downloading %s' % name
+        print('downloading %s' % name, file=sys.stderr)
         getattr(Downloader, name)(args.root)
 

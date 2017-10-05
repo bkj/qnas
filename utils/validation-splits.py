@@ -6,6 +6,8 @@
     Symlink 10% of each dataset as a validation split
 """
 
+from __future__ import print_function
+
 import os
 import sys
 import pandas as pd
@@ -23,7 +25,7 @@ for name in glob('./data/*'):
         continue
     
     root = os.path.abspath(os.path.join('data', 'manual', name))
-    print >> sys.stderr, 'validation-splits.py: %s' % root
+    print('validation-splits.py: %s' % root, file=sys.stderr)
     
     src = os.path.join(root, 'train')
     dests = map(lambda x: os.path.join(root, x), ['tv_train', 'tv_val'])
@@ -37,8 +39,10 @@ for name in glob('./data/*'):
     
     train, val = train_test_split(df, stratify=df.lab, train_size=train_size, random_state=random_state)
     train, val = train.copy(), val.copy()
-    print train.head()
-    print val.head()
+    
+    print(train.head(), file=sys.stderr)
+    print(val.head(), file=sys.stderr)
+    
     for dest, split in zip(dests, [train, val]):
         split['dest'] = split.apply(lambda x: os.path.join(dest, x['lab'], x['fname']), 1)
         

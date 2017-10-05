@@ -13,6 +13,8 @@
     simplest thing, but who knows if there's dropout / whatever
 """
 
+from __future__ import print_function
+
 import sys
 import functools
 import numpy as np

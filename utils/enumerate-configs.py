@@ -4,6 +4,8 @@
     enumerate-configs.py
 """
 
+from __future__ import print_function
+
 import sys
 sys.path.append('..')
 
@@ -39,4 +41,4 @@ if __name__ == "__main__":
         if not args.stdout:
             json.dump(config, open(os.path.join(root, config['model_name']), 'w'))
         else:
-            print json.dumps(config)
+            print(json.dumps(config))
