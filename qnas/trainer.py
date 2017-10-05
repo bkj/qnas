@@ -127,8 +127,9 @@ class QNASTrainer(object):
             curr_acc = correct / total
             curr_loss = all_loss / (batch_idx + 1)
             
-        perf = OrderedDict([('epoch', epoch), ('%s_loss' % mode, curr_loss), ('%s_acc' % mode, curr_acc)])
-        print(json.dumps(perf))
+            perf = OrderedDict([('epoch', epoch), ('%s_loss' % mode, curr_loss), ('%s_acc' % mode, curr_acc)])
+            print(json.dumps(perf))
+        
         return curr_acc, curr_loss
     
     def _train(self):

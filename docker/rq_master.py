@@ -39,7 +39,7 @@ def parse_args():
     parser.add_argument('--empty', action='store_true')
     parser.add_argument('--result-ttl', type=int, default=60 * 60 * 6) # 6 hours
     parser.add_argument('--ttl', type=int, default=60 * 60 * 6) # 6 hours
-    parser.add_argument('--timeout', type=int, default=60 * 10) # 5 minutes
+    parser.add_argument('--timeout', type=int, default=60 * 10) # 10 minutes
     parser.add_argument('--keep-workers', action="store_true")
     
     return parser.parse_args()
