@@ -66,7 +66,7 @@ optimizer_space = {
 # --
 
 class BaseOptimizerController(object):
-    def __init__(**kwargs):
+    def __init__(self, **kwargs):
         
         self.configs_dir = os.path.join(kwargs['outdir'], kwargs['run_name'], 'configs')
         if not os.path.exists(self.configs_dir):
@@ -145,7 +145,7 @@ class EnumeratedOptimizerController(BaseOptimizerController):
     def __init__(self, indir=None, **kwargs):
         assert(indir is not None)
         
-        super(BaseOptimizerController, self).__init__(**kwargs)
+        super(EnumeratedOptimizerController, self).__init__(**kwargs)
         
         self.configs = map(json.loads, open(indir))
     

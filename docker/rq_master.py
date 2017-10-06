@@ -155,7 +155,7 @@ if __name__ == "__main__":
     }
     
     if args.controller_args:
-        controller_args.update(dict([a.split('=') for a in controller_args.split(';')]))
+        controller_args.update(dict([a.split('=') for a in args.controller_args.split(';')]))
     
     controller = QNASControllers[args.controller](**controller_args)
     

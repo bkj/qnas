@@ -19,6 +19,7 @@ from uuid import getnode as get_mac
 from qnas.trainer import QNASTrainer
 from qnas.controllers.dummy import DummyController
 from qnas.controllers.optimizer_search import RandomOptimizerController
+from qnas.controllers.optimizer_search import EnumeratedOptimizerController
 
 # --
 # Function definitions
