@@ -144,31 +144,35 @@ class RandomOptimizerController(BaseOptimizerController):
 
 class EnumeratedOptimizerController(BaseOptimizerController):
     def __init__(self, inpaths=None, epochs=5, **kwargs):
-        assert(indir is not None)
+        assert(inpaths is not None)
         
         super(EnumeratedOptimizerController, self).__init__(**kwargs)
         
         self.epochs = epochs
-        self.configs = [(
-            os.path.basename(f), 
-            json.load(open(f))
-        ) for f in open(inpaths)]
-    
+        
+        self.opt_arches = []
+        for inpath in open(inpaths):
+            inpath = inpath.strip()
+            self.opt_arches.append({
+                "model_name" : os.path.basename(inpath.strip()),
+                "opt_arch" : json.load(open(inpath)),
+            })
+        
     def is_empty(self):
-        return len(self.configs) == 0
+        return len(self.opt_arches) == 0
     
     def seed(self):
-        model_name, opt_arch = self.configs.pop(0)
+        tmp = self.opt_arches.pop(0)
         return {
             "func" : "qnas_trainer",
             "config" : {
-                "model_name"  : "%s-%s" % (self.run_name, model_name),
+                "model_name"  : "%s-%s" % (self.run_name, tmp['model_name']),
                 "net_class"   : 'OptNetSmall',
                 "dataset"     : 'CIFAR10',
                 "epochs"      : self.epochs,
                 "lr_schedule" : 'constant',
                 "lr_init"     : 0.01,
-                "opt_arch"    : opt_arch,
+                "opt_arch"    : tmp['opt_arch'],
             },
             "cuda" : True,
             "lr_fail_factor" : 0.5,
