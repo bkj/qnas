@@ -103,8 +103,8 @@ class RandomOptimizerController(BaseOptimizerController):
         
         super(RandomOptimizerController, self).__init__(**kwargs)
         
-        self.epochs = epochs
-        self.depth = depth
+        self.epochs = int(epochs)
+        self.depth = int(depth)
         self.random_sampler = RandomOptimizerSampler()
     
     def _next(self, last=None):
@@ -149,7 +149,7 @@ class EnumeratedOptimizerController(BaseOptimizerController):
         
         super(EnumeratedOptimizerController, self).__init__(**kwargs)
         
-        self.epochs = epochs
+        self.epochs = int(epochs)
         
         self.opt_arches = []
         for inpath in open(inpaths):
