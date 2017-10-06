@@ -44,7 +44,7 @@ def qnas_trainer_(config, **kwargs):
     config.update({
         "_meta" : get_mac()
     })
-    return config
+    return config, results
 
 # --
 # Register possible functions for `rqworkers` to run
