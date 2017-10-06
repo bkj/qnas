@@ -143,28 +143,32 @@ class RandomOptimizerController(BaseOptimizerController):
 # --
 
 class EnumeratedOptimizerController(BaseOptimizerController):
-    def __init__(self, indir=None, epochs=5, **kwargs):
+    def __init__(self, inpaths=None, epochs=5, **kwargs):
         assert(indir is not None)
         
         super(EnumeratedOptimizerController, self).__init__(**kwargs)
         
-        self.epochs = 5
-        self.configs = [json.load(open(f)) for f in glob(indir)]
+        self.epochs = epochs
+        self.configs = [(
+            os.path.basename(f), 
+            json.load(open(f))
+        ) for f in open(inpaths)]
     
     def is_empty(self):
         return len(self.configs) == 0
     
     def seed(self):
+        model_name, opt_arch = self.configs.pop(0)
         return {
             "func" : "qnas_trainer",
             "config" : {
-                "model_name"  : "%s-%s" % (self.run_name, str(uuid4())),
+                "model_name"  : "%s-%s" % (self.run_name, model_name),
                 "net_class"   : 'OptNetSmall',
                 "dataset"     : 'CIFAR10',
                 "epochs"      : self.epochs,
                 "lr_schedule" : 'constant',
                 "lr_init"     : 0.01,
-                "opt_arch"    : self.configs.pop(0),
+                "opt_arch"    : opt_arch,
             },
             "cuda" : True,
             "lr_fail_factor" : 0.5,
