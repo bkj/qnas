@@ -14,6 +14,7 @@ if sys.version_info.major < 3:
     os._exit(1)
 
 import time
+from uuid import getnode as get_mac
 
 from qnas.trainer import QNASTrainer
 from qnas.controllers.dummy import DummyController
@@ -35,7 +36,10 @@ def qnas_trainer_(config, **kwargs):
     qtrainer = QNASTrainer(config, **kwargs)
     results = qtrainer.train()
     # qtrainer.save()
-    return qtrainer.config, results
+    config = qtrainer.config
+    config.update({
+        "_meta" : get_mac()
+    })
 
 # --
 # Register possible functions for `rqworkers` to run
