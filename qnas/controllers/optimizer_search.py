@@ -143,11 +143,12 @@ class RandomOptimizerController(BaseOptimizerController):
 # --
 
 class EnumeratedOptimizerController(BaseOptimizerController):
-    def __init__(self, indir=None, **kwargs):
+    def __init__(self, indir=None, epochs=5, **kwargs):
         assert(indir is not None)
         
         super(EnumeratedOptimizerController, self).__init__(**kwargs)
         
+        self.epochs = 5
         self.configs = [json.load(open(f)) for f in glob(indir)]
     
     def is_empty(self):
@@ -160,7 +161,7 @@ class EnumeratedOptimizerController(BaseOptimizerController):
                 "model_name"  : "%s-%s" % (self.run_name, str(uuid4())),
                 "net_class"   : 'OptNetSmall',
                 "dataset"     : 'CIFAR10',
-                "epochs"      : 1,
+                "epochs"      : self.epochs,
                 "lr_schedule" : 'constant',
                 "lr_init"     : 0.01,
                 "opt_arch"    : self.configs.pop(0),
