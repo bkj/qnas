@@ -4,6 +4,13 @@
     deploy-ec2.py
     
     Deploy QNAS3 Docker workers via EC2
+    
+    !! This references my security groups, SSH key and private AMI
+    However, should be easy to use
+    
+        ./provision-qnas-ec2.sh
+        
+    to build your own AMI
 """
 
 import os

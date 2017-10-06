@@ -189,8 +189,10 @@ class PPOOptimizerController(object):
         config, hist = last
         print('job finished: %s' % json.dumps(config), file=sys.stderr)
         
-        # Save results
+        # Save
         open(os.path.join(self.configs_dir, config['model_name']), 'w').write(json.dumps(config))
+        
+        hist['config'] = config
         open(os.path.join(self.hists_dir, config['model_name']), 'w').write('\n'.join(map(json.dumps, hist)))
         
         return self._next()
