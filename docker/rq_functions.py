@@ -29,8 +29,11 @@ def kill(delay=1):
     os.kill(os.getppid(), 9)
     
 def run_dummy(config, **kwargs):
-    time.sleep(3)
-    return config, {"dummy" : True}
+    time.sleep(1)
+    config.update({
+        "_meta" : get_mac()
+    })
+    return config, kwargs
 
 def qnas_trainer_(config, **kwargs):
     qtrainer = QNASTrainer(config, **kwargs)
@@ -40,6 +43,7 @@ def qnas_trainer_(config, **kwargs):
     config.update({
         "_meta" : get_mac()
     })
+    return config
 
 # --
 # Register possible functions for `rqworkers` to run
@@ -56,4 +60,5 @@ RQFunctions = {
 QNASControllers = {
     "DummyController" : DummyController,
     "RandomOptimizerController" : RandomOptimizerController,
+    "EnumeratedOptimizerController" : EnumeratedOptimizerController,
 }

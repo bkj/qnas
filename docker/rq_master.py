@@ -35,6 +35,7 @@ def parse_args():
     
     parser.add_argument('--initial-jobs', type=int, default=1)
     parser.add_argument('--controller', type=str, default='DummyController')
+    parser.add_argument('--controller-args', type=str)
     
     parser.add_argument('--empty', action='store_true')
     parser.add_argument('--result-ttl', type=int, default=60 * 60 * 6) # 6 hours
@@ -147,15 +148,24 @@ if __name__ == "__main__":
     if not args.keep_workers:
         atexit.register(master.kill_workers)
     
-    # Initialize controller
-    controller = QNASControllers[args.controller](**{
+    # Initialize controller, possibly w/ extra arguments
+    controller_args = {
         "outdir" : args.outdir,
         "run_name" : args.run_name,
-    })
+    }
+    
+    if args.controller_args:
+        controller_args.update(dict([a.split('=') for a in controller_args.split(';')]))
+    
+    controller = QNASControllers[args.controller](**controller_args)
     
     # Add initial jobs
-    for _ in range(args.initial_jobs):
-        master.add_job(controller.seed())
+    if args.initial_jobs > 0:
+        for _ in range(args.initial_jobs):
+            master.add_job(controller.seed())
+    else:
+        while not controler.is_empty():
+            master.add_job(controller.seed())
     
     # Run, possibly adding more jobs
     master.run_loop(controller.success, controller.failure)

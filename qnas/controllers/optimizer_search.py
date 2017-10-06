@@ -65,6 +65,22 @@ optimizer_space = {
 
 # --
 
+class BaseOptimizerController(object):
+    def __init__(**kwargs):
+        
+        self.configs_dir = os.path.join(kwargs['outdir'], kwargs['run_name'], 'configs')
+        if not os.path.exists(self.configs_dir):
+            os.makedirs(self.configs_dir)
+            
+        self.hists_dir = os.path.join(kwargs['outdir'], kwargs['run_name'], 'hists')
+        if not os.path.exists(self.hists_dir):
+            os.makedirs(self.hists_dir)
+        
+        self.run_name = kwargs['run_name']
+
+
+# --
+
 class RandomOptimizerSampler(object):
     def sample(self, depth=0, seed=None):
         if seed:
@@ -81,17 +97,10 @@ class RandomOptimizerSampler(object):
         }
 
 
-class RandomOptimizerController(object):
+class RandomOptimizerController(BaseOptimizerController):
     def __init__(self, depth=0, **kwargs):
-        self.configs_dir = os.path.join(kwargs['outdir'], kwargs['run_name'], 'configs')
-        if not os.path.exists(self.configs_dir):
-            os.makedirs(self.configs_dir)
-            
-        self.hists_dir = os.path.join(kwargs['outdir'], kwargs['run_name'], 'hists')
-        if not os.path.exists(self.hists_dir):
-            os.makedirs(self.hists_dir)
         
-        self.run_name = kwargs['run_name']
+        super(RandomOptimizerController, self).__init__(**kwargs)
         
         self.depth = depth
         self.random_sampler = RandomOptimizerSampler()
@@ -129,6 +138,47 @@ class RandomOptimizerController(object):
     def failure(self, last):
         print('job failed!', file=sys.stderr)
         return self._next()
+
+# --
+
+class EnumeratedOptimizerController(BaseOptimizerController):
+    def __init__(self, indir=None, **kwargs):
+        assert(indir is not None)
+        
+        super(BaseOptimizerController, self).__init__(**kwargs)
+        
+        self.configs = map(json.loads, open(indir))
+    
+    def is_empty(self):
+        return len(self.configs) > 0
+    
+    def seed(self):
+        return {
+            "func" : "qnas_trainer",
+            "config" : {
+                "model_name"  : "%s-%s" % (self.run_name, str(uuid4())),
+                "net_class"   : 'OptNetSmall',
+                "dataset"     : 'CIFAR10',
+                "epochs"      : 1,
+                "lr_schedule" : 'constant',
+                "lr_init"     : 0.01,
+                "opt_arch"    : self.configs.pop(0),
+            },
+            "cuda" : True,
+            "lr_fail_factor" : 0.5,
+            "dataset_num_workers" : 8
+        }
+    
+    def success(self, last):
+        config, hist = last
+        print('job finished: %s' % json.dumps(config), file=sys.stderr)
+        
+        # Save results
+        open(os.path.join(self.configs_dir, config['model_name']), 'w').write(json.dumps(config))
+        open(os.path.join(self.hists_dir, config['model_name']), 'w').write('\n'.join(map(json.dumps, hist)))
+    
+    def failure(self, last):
+        print('job failed!', file=sys.stderr)
 
 # --
 
