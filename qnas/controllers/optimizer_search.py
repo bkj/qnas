@@ -99,10 +99,11 @@ class RandomOptimizerSampler(object):
 
 
 class RandomOptimizerController(BaseOptimizerController):
-    def __init__(self, depth=0, **kwargs):
+    def __init__(self, depth=0, epochs=5, **kwargs):
         
         super(RandomOptimizerController, self).__init__(**kwargs)
         
+        self.epochs = epochs
         self.depth = depth
         self.random_sampler = RandomOptimizerSampler()
     
@@ -113,7 +114,7 @@ class RandomOptimizerController(BaseOptimizerController):
                 "model_name"  : "%s-%s" % (self.run_name, str(uuid4())),
                 "net_class"   : 'OptNetSmall',
                 "dataset"     : 'CIFAR10',
-                "epochs"      : 1,
+                "epochs"      : self.epochs,
                 "lr_schedule" : 'constant',
                 "lr_init"     : 0.01,
                 "opt_arch"    : self.random_sampler.sample(depth=self.depth),
