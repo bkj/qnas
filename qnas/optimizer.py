@@ -150,7 +150,7 @@ def parse_arch(arch):
             arch[k] = (v, None)
         elif v[0] in Operands.stateful:
             # add unique ID if Operand is stateful (eg to avoid collisions)
-            arch[k] = (v[0], v[1][:-1] + (str(uuid4()),))
+            arch[k] = (v[0], tuple(v[1][:-1]) + (str(uuid4()),))
     
     op1 = partial(getattr(Operands, arch['op1'][0]), params=arch['op1'][1])
     un1 = partial(getattr(UnaryOperation, arch['un1'][0]), params=arch['un1'][1])
