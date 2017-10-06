@@ -67,7 +67,7 @@ class QNASTrainer(object):
             self.net = self.net.cuda()
     
     @staticmethod
-    def _train_epoch(net, loader, epoch, n_train_batches):
+    def _train_epoch(net, loader, epoch, n_train_batches, mode='train'):
         _ = net.train()
         all_loss, correct, total = 0, 0, 0
         history = []
