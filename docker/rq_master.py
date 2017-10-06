@@ -164,7 +164,7 @@ if __name__ == "__main__":
         for _ in range(args.initial_jobs):
             master.add_job(controller.seed())
     else:
-        while not controler.is_empty():
+        while not controller.is_empty():
             master.add_job(controller.seed())
     
     # Run, possibly adding more jobs

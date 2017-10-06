@@ -10,6 +10,7 @@ import os
 import sys
 import json
 import random
+from glob import glob
 from uuid import uuid4
 
 optimizer_space = {
@@ -147,10 +148,10 @@ class EnumeratedOptimizerController(BaseOptimizerController):
         
         super(EnumeratedOptimizerController, self).__init__(**kwargs)
         
-        self.configs = map(json.loads, open(indir))
+        self.configs = [json.load(open(f)) for f in glob(indir)]
     
     def is_empty(self):
-        return len(self.configs) > 0
+        return len(self.configs) == 0
     
     def seed(self):
         return {
