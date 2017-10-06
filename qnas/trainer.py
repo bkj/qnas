@@ -71,7 +71,8 @@ class QNASTrainer(object):
         _ = net.train()
         all_loss, correct, total = 0, 0, 0
         history = []
-        gen = tqdm(enumerate(loader), total=n_train_batches)
+        # gen = tqdm(enumerate(loader), total=n_train_batches)
+        gen = enumerate(loader)
         for batch_idx, (data, targets) in gen:
             if next(net.parameters()).is_cuda:
                 data, targets = data.cuda(), targets.cuda()
@@ -95,8 +96,11 @@ class QNASTrainer(object):
             
             curr_acc = correct / total
             curr_loss = all_loss / (batch_idx + 1)
-            gen.set_postfix(OrderedDict([('epoch', epoch), ('train_loss', curr_loss), ('train_acc', curr_acc)]))
             
+            # gen.set_postfix(OrderedDict([('epoch', epoch), ('train_loss', curr_loss), ('train_acc', curr_acc)]))
+            perf = OrderedDict([('epoch', epoch), ('%s_loss' % mode, curr_loss), ('%s_acc' % mode, curr_acc)])
+            print(json.dumps(perf))
+
             if batch_idx > n_train_batches:
                 break
         
